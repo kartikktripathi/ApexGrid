@@ -1,19 +1,19 @@
-# 🏎️ RaceDelta
+# 🏁 ApexGrid
 
-**RaceDelta** is a data-driven Formula 1 race analysis application that helps users understand what truly happened during a race beyond just the final results. By leveraging real-time and historical data from the OpenF1 API, RaceDelta transforms raw race data into meaningful insights, visualisations, and narratives.
+**ApexGrid** is an interactive Formula 1 data and strategy platform that combines real-time race insights with a competitive prediction game. It allows users to explore current and past F1 seasons while also engaging in a strategic driver-selection game based on real race outcomes.
 
 ---
 
 ## 🎯 Purpose
 
-In Formula 1, final standings often fail to capture the full story of a race. Drivers may gain or lose positions due to strategy, consistency, or race incidents, but these dynamics are not immediately visible from static results.
+Formula 1 is not just about watching races — it’s about understanding performance, strategy, and decision-making. However, most platforms either focus only on raw data or only on entertainment.
 
-**RaceDelta aims to bridge this gap** by:
+**ApexGrid bridges this gap** by:
 
-* Highlighting position changes throughout the race
-* Identifying overperformers and underperformers
-* Presenting race insights in a clear and intuitive manner
-* Making F1 race analysis accessible even to users unfamiliar with the sport
+* Providing structured and interactive access to F1 data
+* Allowing users to track ongoing seasons and past races
+* Introducing a competitive game that rewards strategic thinking
+* Making Formula 1 more engaging and accessible for all users
 
 ---
 
@@ -26,118 +26,132 @@ This project uses the **OpenF1 API**, an open-source API that provides access to
 * Lap-by-lap position data
 * Timing and classification data
 * Championship standings
-* Link: https://openf1.org/
+
+🔗 https://openf1.org/
+
 ---
 
 ## 🚀 Planned Features
 
-### 🧭 Race Selection
+### 🧭 Season & Race Explorer
 
-* Select a **season**
-* Choose a **race event**
-* Toggle between **Sprint** and **Main Race sessions**
-
----
-
-### 🏁 Start vs Finish Analysis
-
-* Display starting grid vs final race positions
-* Calculate and highlight:
-
-  * Positions gained
-  * Positions lost
-* Colour-coded visualisation for quick understanding
+* View data for the **current F1 season (default)**
+* Access selected **past seasons**
+* Track **ongoing race weekends and current standings**
+* Explore race-specific data across sessions
 
 ---
 
-### 📈 Lap-by-Lap Position Visualization
+### 🔍 Search, Filter & Sort
 
-* Graph showing driver positions across laps *(if data is available)*
-* Helps users visualise race progression and key changes over time
+* Search for **drivers and teams**
+* Filter data by:
 
----
+  * Season
+  * Race
+  * Session type
+* Sort based on:
 
-### 🏆 Key Insights
-
-Automatically generated insights such as:
-
-* Driver with the **most positions gained**
-* Driver with the **biggest drop**
-* **Top performers** relative to starting position
-* Consistency indicators (stable vs volatile races)
+  * Position
+  * Points
+  * Performance metrics
 
 ---
 
-### 🧠 Race Story (Narrative Insights)
+### 🏁 Race Data & Insights
 
-* A short, auto-generated summary of the race
-* Highlights key moments and standout performances
-* Designed to make race outcomes understandable at a glance
+* Starting grid vs finishing positions
+* Position changes and performance trends
+* Key highlights from each race
+* Lap-wise position graphs *(if available)*
 
 ---
 
-### 📊 Championship Standings
+### 📊 Championship Tracking
 
-* Current **Driver Standings**
+* Live **Driver Standings**
 * **Constructor Standings**
-* Updates based on selected race within the season
+* Updates based on latest race data
+
+---
+
+### 🎮 F1 Strategy Game (Core Interactive Feature)
+
+A competitive multiplayer-style game where users test their race understanding and strategic thinking.
+
+#### 🧩 How It Works:
+
+* The system randomly selects a **Grand Prix**
+* Each player is given a fixed number of **points/budget**
+* Players must choose:
+
+  * **2 Drivers**
+  * **1 Constructor (Team)**
+* Each selection has a **cost**, requiring strategic decisions
+
+#### 🏆 Winning Criteria:
+
+* Points are calculated based on **real race performance**
+* The player whose selections perform better wins
+
+👉 This feature transforms passive viewing into **active engagement**
 
 ---
 
 ## 💡 Core Concept
 
-At the heart of RaceDelta is the idea of **"delta" (change)**, focusing on how a driver's position evolves from start to finish, rather than just where they end up.
+ApexGrid combines two key ideas:
 
-This approach enables deeper insights into:
+* **Data Exploration** → Understand races, seasons, and performance trends
+* **Strategic Interaction** → Make decisions and compete based on real-world outcomes
 
-* Driver performance
-* Race dynamics
-* Strategic impact
+This creates a platform that is both **analytical and engaging**.
 
 ---
 
 ## 🎯 Target Users
 
-* Formula 1 fans seeking deeper race insights
-* Beginners who want simplified race explanations
-* Developers and data enthusiasts interested in sports analytics
+* Formula 1 fans who want deeper insights
+* Beginners exploring the sport interactively
+* Competitive users who enjoy strategy-based games
+* Developers interested in sports data applications
 
 ---
 
-## 🧠 What Makes RaceDelta Different
+## 🧠 What Makes ApexGrid Different
 
-Unlike traditional dashboards that simply display data, RaceDelta:
+Unlike traditional F1 dashboards, ApexGrid:
 
-* Interprets data into **insights**
-* Presents a **story**, not just numbers
-* Focuses on **performance relative to expectations**
-* Prioritizes **clarity and usability**
+* Combines **data + interaction + gameplay**
+* Encourages **strategic thinking**, not just viewing
+* Provides **real-time and historical context**
+* Makes complex race data **intuitive and engaging**
 
 ---
 
 ## 📌 Project Status
 
 This project is currently in the **planning and design phase**.
-Implementation will begin soon, with a focus on building a clean, intuitive, and insight-driven user experience.
+Development will focus on building a smooth, interactive, and visually intuitive experience.
 
 ---
 
 ## 📖 Future Scope
 
-* Advanced performance metrics
-* Driver comparison tools
-* Strategy analysis (pit stops, tyre usage)
-* Enhanced visual storytelling
+* Advanced scoring systems for the game
+* Private leagues / multiplayer rooms
+* Driver vs driver comparison tools
+* Predictive analytics and race simulations
 
 ---
 
 ## 🤝 Acknowledgements
 
 * OpenF1 API for providing accessible Formula 1 data
-* The Formula 1 community for inspiration and domain knowledge
+* The Formula 1 community for inspiration
 
 ---
 
 ## 📢 Tagline
 
-> **“Understand what really happened in a race — not just the result.”**
+> **“Explore the grid. Build your strategy. Win the race.”**
