@@ -3,22 +3,22 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <meta name="description" content="Formula 1 Live Dashboard providing real-time data, driver information, and latest session updates.">
-    <title>ApexGrid</title>
+    <meta name="description" content="Formula 1 Drivers Grid">
+    <title>ApexGrid - Drivers</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Orbitron:wght@400;500;700;900&family=Inter:wght@300;400;500;600&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="style.css">
     <link rel="icon" href="favicon.svg" type="image/svg+xml">
 </head>
-<body class="home-page">
+<body>
     <nav class="top-navbar">
         <div class="nav-container">
             <a href="index.html" class="nav-logo">
                 <span class="highlight">Apex</span>Grid
             </a>
             <div class="nav-links">
-                <a href="drivers.html" class="nav-link">Drivers</a>
+                <a href="drivers.html" class="nav-link active">Drivers</a>
                 <a href="teams.html" class="nav-link">Teams</a>
                 <a href="seasons.html" class="nav-link">Seasons</a>
                 <a href="leaderboard.html" class="nav-link">Leaderboard</a>
@@ -26,13 +26,6 @@
             </div>
         </div>
     </nav>
-
-    <header class="hero-section">
-        <h1 class="hero-title">
-            <span class="highlight">Apex</span>Grid
-        </h1>
-        <p class="hero-subtitle">Real-time driver and session analytics</p>
-    </header>
 
     <main class="app-main">
         <div id="loading-indicator" class="loading-state">
@@ -47,9 +40,9 @@
         </div>
 
         <div id="dashboard-content" class="dashboard hidden">
-            <section class="session-section glass-panel">
-                <h2 class="section-title">Latest Session Information</h2>
-                <div class="session-details" id="session-info">
+            <section class="drivers-section">
+                <h2 class="section-title">Current Grid</h2>
+                <div class="driver-grid" id="driver-grid">
                 </div>
             </section>
         </div>

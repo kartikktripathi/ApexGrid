@@ -9,26 +9,43 @@ let sessionInfo = document.getElementById("session-info")
 let driverGrid = document.getElementById("driver-grid")
 
 async function initDashboard() {
+    if (!sessionInfo && !driverGrid) return;
+
     showLoading()
     try {
-        const [sessionRes, driversRes] = await Promise.all([
-            fetch(`${API_BASE_URL}/sessions?session_key=latest`),
-            fetch(`${API_BASE_URL}/drivers?session_key=latest`)
-        ])
+        const tasks = [];
+        let fetchedSession = null;
+        let fetchedDrivers = null;
 
-        if (!sessionRes.ok || !driversRes.ok) {
-            throw new Error("Failed to fetch data from API")
+        if (sessionInfo) {
+            tasks.push(fetch(`${API_BASE_URL}/sessions?session_key=latest`).then(res => {
+                if (!res.ok) throw new Error("Failed to fetch session data");
+                return res.json().then(data => fetchedSession = data);
+            }));
+        }
+        if (driverGrid) {
+            tasks.push(fetch(`${API_BASE_URL}/drivers?session_key=latest`).then(res => {
+                if (!res.ok) throw new Error("Failed to fetch drivers data");
+                return res.json().then(data => fetchedDrivers = data);
+            }));
         }
 
-        const sessionData = await sessionRes.json()
-        const driversData = await driversRes.json()
+        await Promise.all(tasks);
 
-        if (!sessionData || sessionData.length === 0) {
-            throw new Error("No latest session data available.")
+        if (sessionInfo) {
+            if (!fetchedSession || fetchedSession.length === 0) {
+                throw new Error("No latest session data available.");
+            }
+            renderSessionInfo(fetchedSession[0]);
         }
 
-        renderSessionInfo(sessionData[0])
-        renderDriversGrid(driversData)
+        if (driverGrid) {
+            if (!fetchedDrivers) {
+                throw new Error("No initial driver grid data available.");
+            }
+            renderDriversGrid(fetchedDrivers);
+        }
+
         showDashboard()
     } catch (err) {
         console.log("Error fetching F1 data:", err)
@@ -80,7 +97,7 @@ function renderDriversGrid(drivers) {
     }
 
     uniqueDrivers.forEach(driver => {
-        const teamColor = driver.team_colour ? `#${driver.team_colour}` : "var(--f1-red)"
+        const teamColor = driver.team_colour ? `#${driver.team_colour}` : "#e10600"
         
         const card = document.createElement("div")
         card.className = "driver-card"
@@ -111,23 +128,28 @@ function renderDriversGrid(drivers) {
 }
 
 function showLoading() {
-    loadingIndicator.className = loadingIndicator.className.replace("hidden", "").trim()
-    if (dashboardContent.className.indexOf("hidden") === -1) dashboardContent.className += " hidden"
-    if (errorContainer.className.indexOf("hidden") === -1) errorContainer.className += " hidden"
+    if (loadingIndicator && loadingIndicator.className.indexOf("hidden") === -1 === false) {
+        loadingIndicator.className = loadingIndicator.className.replace("hidden", "").trim()
+    }
+    if (loadingIndicator) loadingIndicator.className = loadingIndicator.className.replace("hidden", "").trim()
+    if (dashboardContent && dashboardContent.className.indexOf("hidden") === -1) dashboardContent.className += " hidden"
+    if (errorContainer && errorContainer.className.indexOf("hidden") === -1) errorContainer.className += " hidden"
 }
 
 function showDashboard() {
-    if (loadingIndicator.className.indexOf("hidden") === -1) loadingIndicator.className += " hidden"
-    dashboardContent.className = dashboardContent.className.replace("hidden", "").trim()
-    if (errorContainer.className.indexOf("hidden") === -1) errorContainer.className += " hidden"
+    if (loadingIndicator && loadingIndicator.className.indexOf("hidden") === -1) loadingIndicator.className += " hidden"
+    if (dashboardContent) dashboardContent.className = dashboardContent.className.replace("hidden", "").trim()
+    if (errorContainer && errorContainer.className.indexOf("hidden") === -1) errorContainer.className += " hidden"
 }
 
 function showError(message) {
-    errorMessage.textContent = message
-    if (loadingIndicator.className.indexOf("hidden") === -1) loadingIndicator.className += " hidden"
-    if (dashboardContent.className.indexOf("hidden") === -1) dashboardContent.className += " hidden"
-    errorContainer.className = errorContainer.className.replace("hidden", "").trim()
+    if (errorMessage) errorMessage.textContent = message
+    if (loadingIndicator && loadingIndicator.className.indexOf("hidden") === -1) loadingIndicator.className += " hidden"
+    if (dashboardContent && dashboardContent.className.indexOf("hidden") === -1) dashboardContent.className += " hidden"
+    if (errorContainer) errorContainer.className = errorContainer.className.replace("hidden", "").trim()
 }
 
-retryButton.addEventListener("click", initDashboard)
+if (retryButton) {
+    retryButton.addEventListener("click", initDashboard)
+}
 document.addEventListener("DOMContentLoaded", initDashboard)
