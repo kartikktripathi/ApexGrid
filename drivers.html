@@ -42,10 +42,24 @@
         <div id="dashboard-content" class="dashboard hidden">
             <section class="drivers-section">
                 <h2 class="section-title">Current Grid</h2>
-                <div class="driver-grid" id="driver-grid">
+                <div class="page-controls" id="driver-controls">
+                    <div class="search-wrap">
+                        <span class="search-icon">🔍</span>
+                        <input type="text" id="driver-search" class="search-input" placeholder="Search driver or team…">
+                    </div>
+                    <select id="driver-team-filter" class="filter-select">
+                        <option value="">All Teams</option>
+                    </select>
+                    <div class="sort-btns">
+                        <button class="sort-btn active" id="driver-sort-az" title="Name A → Z">A → Z</button>
+                        <button class="sort-btn" id="driver-sort-za" title="Name Z → A">Z → A</button>
+                    </div>
                 </div>
+                <div class="driver-grid" id="driver-grid"></div>
+                <p class="no-results hidden" id="driver-no-results">No drivers match your search / filter.</p>
             </section>
         </div>
+
     </main>
 
     <script src="script.js"></script>

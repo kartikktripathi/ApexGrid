@@ -90,8 +90,11 @@ async function initDashboard() {
 
         if (seasonsGrid) {
             const year = seasonSelect ? seasonSelect.value : new Date().getFullYear();
+            _seasonCountryFilter = '';
+            _seasonSearch = '';
             tasks.push(fetchSeasonData(year).then(data => fetchedSeasonsData = data));
         }
+
 
         if (sessionInfo) {
             const currentYear = new Date().getFullYear();
@@ -231,6 +234,11 @@ function renderSessionInfo(result) {
     }
 }
 
+let _allDriversRaw = [];
+let _driverSortDir = 'az';
+let _driverTeamFilter = '';
+let _driverSearch = '';
+
 function renderDriversGrid(drivers) {
     driverGrid.innerHTML = ""
 
@@ -239,10 +247,9 @@ function renderDriversGrid(drivers) {
         return
     }
 
-    // handling the duplicates below..
+    // De-duplicate
     const uniqueDrivers = []
     const seenNumbers = []
-
     for (const d of drivers) {
         if (!seenNumbers.includes(d.driver_number)) {
             uniqueDrivers.push(d)
@@ -250,9 +257,81 @@ function renderDriversGrid(drivers) {
         }
     }
 
-    uniqueDrivers.forEach(driver => {
-        const teamColor = driver.team_colour ? `#${driver.team_colour}` : "#e10600"
+    _allDriversRaw = uniqueDrivers;
 
+    // Populate team filter dropdown
+    const teamFilter = document.getElementById('driver-team-filter');
+    if (teamFilter) {
+        const teams = [...new Set(uniqueDrivers.map(d => d.team_name).filter(Boolean))].sort();
+        const currentVal = teamFilter.value;
+        teamFilter.innerHTML = '<option value="">All Teams</option>'
+            + teams.map(t => `<option value="${t}"${t === currentVal ? ' selected' : ''}>${t}</option>`).join('');
+    }
+
+    applyDriverFilters();
+    wireDriverControls();
+}
+
+function wireDriverControls() {
+    const search   = document.getElementById('driver-search');
+    const filter   = document.getElementById('driver-team-filter');
+    const sortAZ   = document.getElementById('driver-sort-az');
+    const sortZA   = document.getElementById('driver-sort-za');
+    if (!search || _driverControlsWired) return;
+    _driverControlsWired = true;
+
+    search.addEventListener('input',  () => { _driverSearch = search.value; applyDriverFilters(); });
+    filter.addEventListener('change', () => { _driverTeamFilter = filter.value; applyDriverFilters(); });
+    sortAZ.addEventListener('click',  () => {
+        _driverSortDir = 'az';
+        sortAZ.classList.add('active'); sortZA.classList.remove('active');
+        applyDriverFilters();
+    });
+    sortZA.addEventListener('click',  () => {
+        _driverSortDir = 'za';
+        sortZA.classList.add('active'); sortAZ.classList.remove('active');
+        applyDriverFilters();
+    });
+}
+let _driverControlsWired = false;
+
+function applyDriverFilters() {
+    const noResults = document.getElementById('driver-no-results');
+
+    let list = [..._allDriversRaw];
+
+    // Filter by team
+    if (_driverTeamFilter) {
+        list = list.filter(d => d.team_name === _driverTeamFilter);
+    }
+
+    // Search
+    const q = _driverSearch.trim().toLowerCase();
+    if (q) {
+        list = list.filter(d => {
+            const name = (d.full_name || `${d.first_name || ''} ${d.last_name || ''}`).toLowerCase();
+            const team = (d.team_name || '').toLowerCase();
+            return name.includes(q) || team.includes(q);
+        });
+    }
+
+    // Sort
+    list.sort((a, b) => {
+        const na = (a.full_name || `${a.first_name || ''} ${a.last_name || ''}`).toLowerCase();
+        const nb = (b.full_name || `${b.first_name || ''} ${b.last_name || ''}`).toLowerCase();
+        return _driverSortDir === 'az' ? na.localeCompare(nb) : nb.localeCompare(na);
+    });
+
+    // Render
+    driverGrid.innerHTML = '';
+    if (list.length === 0) {
+        if (noResults) noResults.classList.remove('hidden');
+        return;
+    }
+    if (noResults) noResults.classList.add('hidden');
+
+    list.forEach(driver => {
+        const teamColor = driver.team_colour ? `#${driver.team_colour}` : "#e10600"
         const card = document.createElement("div")
         card.className = "driver-card"
         card.style.borderTop = `3px solid ${teamColor}`
@@ -276,10 +355,10 @@ function renderDriversGrid(drivers) {
                 </div>
             </div>
         `
-
         driverGrid.appendChild(card)
     })
 }
+
 
 function renderTeamsGrid(drivers) {
     teamGrid.innerHTML = ""
@@ -420,9 +499,16 @@ async function fetchSeasonData(year) {
     return { pastRaces, podiumRounds, driversMap };
 }
 
+let _seasonData = null;
+let _seasonSortDir = 'az';
+let _seasonCountryFilter = '';
+let _seasonSearch = '';
+let _seasonControlsWired = false;
+
 function renderSeasonsGrid(data) {
     window.failedDataPool = window.failedDataPool.filter(i => !i.label.includes('(Season Grid)'));
-    const { pastRaces, podiumRounds, driversMap } = data;
+    _seasonData = data;
+    const { pastRaces, podiumRounds } = data;
     seasonsGrid.innerHTML = "";
 
     if (pastRaces.length === 0) {
@@ -430,7 +516,79 @@ function renderSeasonsGrid(data) {
         return;
     }
 
-    podiumRounds.forEach(round => {
+    // Populate country filter
+    const countryFilter = document.getElementById('season-country-filter');
+    if (countryFilter) {
+        const countries = [...new Set(podiumRounds.map(r => r.race.country_name).filter(Boolean))].sort();
+        const currentVal = countryFilter.value;
+        countryFilter.innerHTML = '<option value="">All Countries</option>'
+            + countries.map(c => `<option value="${c}"${c === currentVal ? ' selected' : ''}>${c}</option>`).join('');
+    }
+
+    applySeasonFilters();
+    wireSeasonControls();
+}
+
+function wireSeasonControls() {
+    const search   = document.getElementById('season-search');
+    const filter   = document.getElementById('season-country-filter');
+    const sortAZ   = document.getElementById('season-sort-az');
+    const sortZA   = document.getElementById('season-sort-za');
+    if (!search || _seasonControlsWired) return;
+    _seasonControlsWired = true;
+
+    search.addEventListener('input',  () => { _seasonSearch = search.value; applySeasonFilters(); });
+    filter.addEventListener('change', () => { _seasonCountryFilter = filter.value; applySeasonFilters(); });
+    sortAZ.addEventListener('click',  () => {
+        _seasonSortDir = 'az';
+        sortAZ.classList.add('active'); sortZA.classList.remove('active');
+        applySeasonFilters();
+    });
+    sortZA.addEventListener('click',  () => {
+        _seasonSortDir = 'za';
+        sortZA.classList.add('active'); sortAZ.classList.remove('active');
+        applySeasonFilters();
+    });
+}
+
+function applySeasonFilters() {
+    if (!_seasonData) return;
+    const { podiumRounds, driversMap } = _seasonData;
+    const noResults = document.getElementById('season-no-results');
+
+    let rounds = [...podiumRounds];
+
+    // Filter by country
+    if (_seasonCountryFilter) {
+        rounds = rounds.filter(r => r.race.country_name === _seasonCountryFilter);
+    }
+
+    // Search by GP name
+    const q = _seasonSearch.trim().toLowerCase();
+    if (q) {
+        rounds = rounds.filter(r => {
+            const title = ((r.race.country_name || '') + ' ' + (r.race.location || '')).toLowerCase();
+            return title.includes(q);
+        });
+    }
+
+    // Sort by GP name
+    rounds.sort((a, b) => {
+        const ta = (a.race.country_name || a.race.location || '').toLowerCase();
+        const tb = (b.race.country_name || b.race.location || '').toLowerCase();
+        return _seasonSortDir === 'az' ? ta.localeCompare(tb) : tb.localeCompare(ta);
+    });
+
+    seasonsGrid.innerHTML = '';
+
+    if (rounds.length === 0) {
+        if (noResults) noResults.classList.remove('hidden');
+        window.renderFailedDataPool();
+        return;
+    }
+    if (noResults) noResults.classList.add('hidden');
+
+    rounds.forEach(round => {
         const race = round.race;
         const podium = round.podium;
         const gpTitle = race.location ? `${race.country_name} (${race.location})` : race.country_name;
@@ -462,7 +620,7 @@ function renderSeasonsGrid(data) {
         card.style.height = "100%";
 
         const dateObj = new Date(race.date_start);
-        
+
         if (podium.every(p => !p)) {
             window.failedDataPool.push({
                  label: `${gpTitle} (Season Grid)`,
@@ -489,7 +647,7 @@ function renderSeasonsGrid(data) {
                          const newPodium = [latestPositions[1], latestPositions[2], latestPositions[3]];
                          if (newPodium.every(p => !p)) return false;
                          round.podium = newPodium;
-                         renderSeasonsGrid(data);
+                         renderSeasonsGrid(_seasonData);
                          return true;
                      } catch(e) { return false; }
                  }
@@ -529,6 +687,7 @@ function renderSeasonsGrid(data) {
     });
     window.renderFailedDataPool();
 }
+
 
 (function initLeaderboard() {
     const lbSeasonSelect = document.getElementById('lb-season-select');
