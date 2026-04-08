@@ -1,5 +1,72 @@
 const API_BASE_URL = "https://api.openf1.org/v1"
 
+window.failedDataPool = [];
+function renderFailedDataPool() {
+    let container = document.getElementById('failed-data-pool');
+    if (!container) {
+        container = document.createElement('div');
+        container.id = 'failed-data-pool';
+        container.style.marginTop = '3rem';
+        container.style.padding = '1.5rem';
+        container.style.borderTop = '1px solid rgba(255,255,255,0.1)';
+        container.style.display = 'none';
+        
+        container.innerHTML = `
+            <h3 style="color:#e10600; margin-bottom: 1rem; font-size: 1.1rem; text-transform: uppercase; letter-spacing: 1px;">Data not fetched</h3>
+            <div id="failed-data-list" style="display:flex; flex-wrap:wrap; gap:1rem;"></div>
+        `;
+        
+        const main = document.querySelector('main.app-main') || document.body;
+        main.appendChild(container);
+    }
+    
+    const list = document.getElementById('failed-data-list');
+    list.innerHTML = '';
+    
+    if (window.failedDataPool.length === 0) {
+        container.style.display = 'none';
+        return;
+    }
+    
+    container.style.display = 'block';
+    window.failedDataPool.forEach((item, idx) => {
+        const itemEl = document.createElement('div');
+        itemEl.style.background = 'rgba(255,255,255,0.05)';
+        itemEl.style.border = '1px solid rgba(255,255,255,0.2)';
+        itemEl.style.padding = '0.5rem 1rem';
+        itemEl.style.borderRadius = '4px';
+        itemEl.style.display = 'flex';
+        itemEl.style.alignItems = 'center';
+        itemEl.style.gap = '1rem';
+        
+        itemEl.innerHTML = `
+            <span style="font-size:0.9rem; color:#f4f4f5;">${item.label}</span>
+            <button class="btn" style="padding:0.3rem 0.6rem; font-size:0.8rem; min-width:60px;">Reload</button>
+        `;
+        
+        const btn = itemEl.querySelector('button');
+        btn.addEventListener('click', async () => {
+            btn.textContent = '...';
+            btn.disabled = true;
+            try {
+                const success = await item.retry();
+                if (success) {
+                    window.failedDataPool.splice(idx, 1);
+                    renderFailedDataPool();
+                } else {
+                    btn.textContent = 'Failed';
+                    setTimeout(() => { btn.textContent = 'Reload'; btn.disabled = false; }, 2000);
+                }
+            } catch (err) {
+                btn.textContent = 'Failed';
+                setTimeout(() => { btn.textContent = 'Reload'; btn.disabled = false; }, 2000);
+            }
+        });
+        
+        list.appendChild(itemEl);
+    });
+}
+
 let loadingIndicator = document.getElementById("loading-indicator")
 let dashboardContent = document.getElementById("dashboard-content")
 let errorContainer = document.getElementById("error-container")
@@ -354,6 +421,7 @@ async function fetchSeasonData(year) {
 }
 
 function renderSeasonsGrid(data) {
+    window.failedDataPool = window.failedDataPool.filter(i => !i.label.includes('(Season Grid)'));
     const { pastRaces, podiumRounds, driversMap } = data;
     seasonsGrid.innerHTML = "";
 
@@ -394,9 +462,42 @@ function renderSeasonsGrid(data) {
         card.style.height = "100%";
 
         const dateObj = new Date(race.date_start);
-        const podiumContent = podium.every(p => !p) 
-            ? `<div style="flex: 1; display: flex; align-items: center; justify-content: center; text-align: center; color: #9ca3af; font-size: 0.9rem; padding: 1rem;">Not able to fetch data</div>`
-            : `
+        
+        if (podium.every(p => !p)) {
+            window.failedDataPool.push({
+                 label: `${gpTitle} (Season Grid)`,
+                 retry: async () => {
+                     try {
+                         const API_B = "https://api.openf1.org/v1";
+                         const [posRes, drvRes] = await Promise.all([
+                             fetch(`${API_B}/position?session_key=${race.session_key}&position%3C%3D3`),
+                             fetch(`${API_B}/drivers?session_key=${race.session_key}`)
+                         ]);
+                         if (!posRes.ok || !drvRes.ok) return false;
+                         const drvs = await drvRes.json();
+                         drvs.forEach(d => { driversMap[d.driver_number] = d; });
+                         const posData = await posRes.json();
+                         const latestPositions = { 1: null, 2: null, 3: null };
+                         posData.forEach(p => {
+                             const pos = p.position;
+                             if (pos >= 1 && pos <= 3) {
+                                 if (!latestPositions[pos] || new Date(p.date) > new Date(latestPositions[pos].date)) {
+                                     latestPositions[pos] = p;
+                                 }
+                             }
+                         });
+                         const newPodium = [latestPositions[1], latestPositions[2], latestPositions[3]];
+                         if (newPodium.every(p => !p)) return false;
+                         round.podium = newPodium;
+                         renderSeasonsGrid(data);
+                         return true;
+                     } catch(e) { return false; }
+                 }
+            });
+            return;
+        }
+
+        const podiumContent = `
                 <div style="display: flex; justify-content: center; align-items: flex-end; gap: 0.5rem; height: 100px; padding-top: 10px;">
                     <div style="display: flex; flex-direction: column; align-items: center; width: 30%;">
                         ${getDriverUI(podium[1])}
@@ -426,6 +527,7 @@ function renderSeasonsGrid(data) {
         `;
         seasonsGrid.appendChild(card);
     });
+    window.renderFailedDataPool();
 }
 
 (function initLeaderboard() {
@@ -625,6 +727,7 @@ function renderSeasonsGrid(data) {
     }
 
     async function loadLeaderboard() {
+        window.failedDataPool = window.failedDataPool.filter(i => !i.label.includes('(Leaderboard)'));
         const year = lbSeasonSelect.value;
         seasonLabel.textContent = `🏆 ${year}`;
 
@@ -662,7 +765,35 @@ function renderSeasonsGrid(data) {
             const dData = await dChampRes.value.json();
             if (!dData || dData.length === 0) throw new Error('No driver standings data available for this season yet.');
 
-            const enriched = dData.map(entry => Object.assign({}, driverInfoMap[entry.driver_number] || {}, entry));
+            const enriched = [];
+            dData.forEach(entry => {
+                const info = driverInfoMap[entry.driver_number];
+                if (!info || !info.first_name) {
+                    window.failedDataPool.push({
+                        label: `Driver #${entry.driver_number} (Leaderboard)`,
+                        retry: async () => {
+                            try {
+                                const r = await fetch(`${API}/drivers?driver_number=${entry.driver_number}`);
+                                if (!r.ok) return false;
+                                const arr = await r.json();
+                                if (!arr || arr.length === 0) return false;
+                                driverInfoMap[entry.driver_number] = arr[arr.length - 1];
+                                const currentEnriched = [];
+                                dData.forEach(e => {
+                                    const inf = driverInfoMap[e.driver_number];
+                                    if (inf && inf.first_name) currentEnriched.push(Object.assign({}, inf, e));
+                                });
+                                const sorted = currentEnriched.sort((a, b) => (b.points_current ?? 0) - (a.points_current ?? 0));
+                                renderDriverPodium(sorted);
+                                renderDriverTable(sorted);
+                                return true;
+                            } catch(e) { return false; }
+                        }
+                    });
+                } else {
+                    enriched.push(Object.assign({}, info, entry));
+                }
+            });
             const sorted = enriched.sort((a, b) => (b.points_current ?? 0) - (a.points_current ?? 0));
             renderDriverPodium(sorted);
             renderDriverTable(sorted);
@@ -676,11 +807,43 @@ function renderSeasonsGrid(data) {
             const cData = await cChampRes.value.json();
             if (!cData || cData.length === 0) throw new Error('No constructor standings data available for this season yet.');
 
-            const enriched = cData.map(entry => Object.assign({}, entry, { team_colour: teamColorMap[entry.team_name] || null }));
+            const enriched = [];
+            cData.forEach(entry => {
+                const colour = teamColorMap[entry.team_name];
+                if (!colour) {
+                    window.failedDataPool.push({
+                         label: `Constructor: ${entry.team_name} (Leaderboard)`,
+                         retry: async () => {
+                              try {
+                                  const r = await fetch(`${API}/drivers?team_name=${encodeURIComponent(entry.team_name)}`);
+                                  if (!r.ok) return false;
+                                  const arr = await r.json();
+                                  if (!arr || arr.length === 0) return false;
+                                  // Look for valid team colour in the driver responses
+                                  const tColor = arr.find(d => d.team_colour)?.team_colour;
+                                  if (!tColor) return false;
+                                  teamColorMap[entry.team_name] = tColor;
+                                  const currentEnriched = [];
+                                  cData.forEach(e => {
+                                      const c = teamColorMap[e.team_name];
+                                      if (c) currentEnriched.push(Object.assign({}, e, { team_colour: c }));
+                                  });
+                                  const sorted = currentEnriched.sort((a,b) => (b.points_current ?? 0) - (a.points_current ?? 0));
+                                  renderConstructorPodium(sorted);
+                                  renderConstructorTable(sorted);
+                                  return true;
+                              } catch(e) { return false; }
+                         }
+                    });
+                } else {
+                    enriched.push(Object.assign({}, entry, { team_colour: colour }));
+                }
+            });
             const sorted = enriched.sort((a, b) => (b.points_current ?? 0) - (a.points_current ?? 0));
             renderConstructorPodium(sorted);
             renderConstructorTable(sorted);
             setConstructorState('done');
+            window.renderFailedDataPool();
         } catch (err) {
             setConstructorState('error', err.message);
         }
@@ -727,6 +890,7 @@ function renderSeasonsGrid(data) {
     }
 
     async function init() {
+        window.failedDataPool = window.failedDataPool.filter(i => !i.label.includes('(Game Draft)'));
         showOnly(gameLoading);
         try {
             const sessRes = await fetch(`${API}/sessions?year=${GAME_YEAR}&session_name=Race`);
@@ -756,20 +920,68 @@ function renderSeasonsGrid(data) {
             dInfo.forEach(d => { if (!dInfoMap[d.driver_number]) dInfoMap[d.driver_number] = d; });
 
             const driversSorted = [...dChamp].sort((a, b) => (b.points_current ?? 0) - (a.points_current ?? 0));
-            allDrivers = driversSorted.map((entry, idx) => {
-                const info = dInfoMap[entry.driver_number] || {};
-                return Object.assign({}, info, entry, { price: DRIVER_PRICE(idx + 1), rank: idx + 1 });
+            allDrivers = [];
+            driversSorted.forEach(entry => {
+                const info = dInfoMap[entry.driver_number];
+                if (!info || !info.first_name) {
+                    window.failedDataPool.push({
+                        label: `Driver #${entry.driver_number} (Game Draft)`,
+                        retry: async () => {
+                            try {
+                                const r = await fetch(`${API}/drivers?driver_number=${entry.driver_number}`);
+                                if (!r.ok) return false;
+                                const arr = await r.json();
+                                if (!arr || arr.length === 0) return false;
+                                const fetchedInfo = arr[arr.length - 1];
+                                dInfoMap[entry.driver_number] = fetchedInfo;
+                                allDrivers.push(Object.assign({}, fetchedInfo, entry));
+                                allDrivers.sort((a,b) => (b.points_current ?? 0) - (a.points_current ?? 0));
+                                allDrivers.forEach((d, i) => { d.rank = i+1; d.price = DRIVER_PRICE(i+1); });
+                                buildDraft();
+                                return true;
+                            } catch(e) { return false; }
+                        }
+                    });
+                } else {
+                    allDrivers.push(Object.assign({}, info, entry));
+                }
             });
+            allDrivers.sort((a,b) => (b.points_current ?? 0) - (a.points_current ?? 0));
+            allDrivers.forEach((d, i) => { d.rank = i+1; d.price = DRIVER_PRICE(i+1); });
 
             const teamColorMap = {};
             allDrivers.forEach(d => { if (d.team_name && d.team_colour) teamColorMap[d.team_name] = d.team_colour; });
             const teamsSorted = [...cChamp].sort((a, b) => (b.points_current ?? 0) - (a.points_current ?? 0));
-            allTeams = teamsSorted.map((t, idx) => ({
-                ...t,
-                team_colour: teamColorMap[t.team_name] || null,
-                price: TEAM_PRICE(idx + 1),
-                rank: idx + 1
-            }));
+            allTeams = [];
+            teamsSorted.forEach(t => {
+                const colour = teamColorMap[t.team_name];
+                if (!colour) {
+                    window.failedDataPool.push({
+                         label: `Constructor: ${t.team_name} (Game Draft)`,
+                         retry: async () => {
+                              try {
+                                  const r = await fetch(`${API}/drivers?team_name=${encodeURIComponent(t.team_name)}`);
+                                  if (!r.ok) return false;
+                                  const arr = await r.json();
+                                  if (!arr || arr.length === 0) return false;
+                                  const tColor = arr.find(d => d.team_colour)?.team_colour;
+                                  if (!tColor) return false;
+                                  teamColorMap[t.team_name] = tColor;
+                                  allTeams.push({ ...t, team_colour: tColor });
+                                  allTeams.sort((a,b) => (b.points_current ?? 0) - (a.points_current ?? 0));
+                                  allTeams.forEach((team, i) => { team.rank = i+1; team.price = TEAM_PRICE(i+1); });
+                                  buildDraft();
+                                  return true;
+                              } catch(e) { return false; }
+                         }
+                    });
+                } else {
+                    allTeams.push({ ...t, team_colour: colour });
+                }
+            });
+            allTeams.sort((a,b) => (b.points_current ?? 0) - (a.points_current ?? 0));
+            allTeams.forEach((team, i) => { team.rank = i+1; team.price = TEAM_PRICE(i+1); });
+            window.renderFailedDataPool();
 
             buildDraft();
             showOnly(gameDraft);
@@ -907,12 +1119,6 @@ function renderSeasonsGrid(data) {
     }
 
     function refreshAllItems() {
-        const takenDrivers = new Set();
-        [1, 2].forEach(p => {
-            if (state[p].d1) takenDrivers.add(state[p].d1.driver_number);
-            if (state[p].d2) takenDrivers.add(state[p].d2.driver_number);
-        });
-
         [1, 2].forEach(p => {
             const ps = state[p];
             const myDriverNums = new Set();
@@ -923,13 +1129,12 @@ function renderSeasonsGrid(data) {
             document.querySelectorAll(`#p${p}-drivers-list .roster-item`).forEach(item => {
                 const num = Number(item.dataset.num);
                 const isMine = myDriverNums.has(num);
-                const isTakenByOther = takenDrivers.has(num) && !isMine;
                 const driver = allDrivers.find(d => d.driver_number === num);
                 const cantAfford = !isMine && driver && driver.price > ps.budget;
                 const willOverfill = !isMine && slotsFullForPlayer;
 
                 item.classList.toggle('selected', isMine);
-                item.classList.toggle('disabled', isTakenByOther || (!isMine && (cantAfford || willOverfill)));
+                item.classList.toggle('disabled', (!isMine && (cantAfford || willOverfill)));
             });
 
             document.querySelectorAll(`#p${p}-teams-list .roster-item`).forEach(item => {
