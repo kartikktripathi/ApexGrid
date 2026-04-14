@@ -23,7 +23,6 @@ This project uses the **OpenF1 API**, an open-source API that provides access to
 
 * Session and race information
 * Driver data
-* Lap-by-lap position data
 * Timing and classification data
 * Championship standings
 
@@ -42,34 +41,9 @@ This project uses the **OpenF1 API**, an open-source API that provides access to
 
 ---
 
-### 🔍 Search, Filter & Sort
-
-* Search for **drivers and teams**
-* Filter data by:
-
-  * Season
-  * Race
-  * Session type
-* Sort based on:
-
-  * Position
-  * Points
-  * Performance metrics
-
----
-
-### 🏁 Race Data & Insights
-
-* Starting grid vs finishing positions
-* Position changes and performance trends
-* Key highlights from each race
-* Lap-wise position graphs *(if available)*
-
----
-
 ### 📊 Championship Tracking
 
-* Live **Driver Standings**
+* **Driver Standings**
 * **Constructor Standings**
 * Updates based on latest race data
 
