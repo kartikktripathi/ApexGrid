@@ -1,5 +1,6 @@
 import React from 'react';
 import Navbar from './Navbar';
+import ScrollToTop from '../ui/ScrollToTop';
 import { motion } from 'framer-motion';
 
 export default function PageLayout({ children }) {
@@ -15,6 +16,7 @@ export default function PageLayout({ children }) {
       >
         {children}
       </motion.main>
+      <ScrollToTop />
     </>
   );
 }
