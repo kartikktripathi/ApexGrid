@@ -49,40 +49,6 @@ This project uses the **OpenF1 API**, an open-source API that provides access to
 
 ---
 
-### 🎮 F1 Strategy Game (Core Interactive Feature)
-
-A competitive multiplayer-style game where users test their race understanding and strategic thinking.
-
-#### 🧩 How It Works:
-
-* The system randomly selects a **Grand Prix**
-* Each player is given a fixed number of **points/budget**
-* Players must choose:
-
-  * **2 Drivers**
-  * **1 Constructor (Team)**
-* Each selection has a **cost**, requiring strategic decisions
-
-#### 🏆 Winning Criteria:
-
-* Points are calculated based on **real race performance**
-* The player whose selections perform better wins
-
-👉 This feature transforms passive viewing into **active engagement**
-
----
-
-## 💡 Core Concept
-
-ApexGrid combines two key ideas:
-
-* **Data Exploration** → Understand races, seasons, and performance trends
-* **Strategic Interaction** → Make decisions and compete based on real-world outcomes
-
-This creates a platform that is both **analytical and engaging**.
-
----
-
 ## 🎯 Target Users
 
 * Formula 1 fans who want deeper insights
