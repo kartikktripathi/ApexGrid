@@ -80,7 +80,6 @@ Development will focus on building a smooth, interactive, and visually intuitive
 
 * Advanced scoring systems for the game
 * Private leagues / multiplayer rooms
-* Driver vs driver comparison tools
 * Predictive analytics and race simulations
 
 ---
