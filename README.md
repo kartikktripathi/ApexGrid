@@ -1,7 +1,6 @@
 # 🏁 ApexGrid
 
-**ApexGrid** is an interactive Formula 1 data and strategy platform that combines real-time race insights with a competitive prediction game. It allows users to explore current and past F1 seasons while also engaging in a strategic driver-selection game based on real race outcomes.
-
+**ApexGrid** is an interactive Formula 1 data and strategy platform that combines real-time race insights with a competitive prediction game. 
 ---
 
 ## 🎯 Purpose
