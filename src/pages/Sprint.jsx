@@ -4,6 +4,7 @@ import { f1Api } from '../utils/api';
 import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
 import MeetingCard from '../components/calendar/MeetingCard';
+import CustomDropdown from '../components/ui/CustomDropdown';
 
 export default function Sprint() {
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
@@ -76,7 +77,7 @@ export default function Sprint() {
     <div style={{ background: 'var(--color-bg-base)', minHeight: '100vh', paddingBottom: '10vw' }}>
       
       {/* PAGE HEADER - Cinematic World Tour */}
-      <div style={{ padding: '8vw 5vw 4vw 5vw', position: 'relative', overflow: 'hidden' }}>
+      <div style={{ padding: '8vw 5vw 4vw 5vw', position: 'relative', zIndex: 20 }}>
         
         {/* Subtle Map/Globe overlay graphic could go here. For now using gradient */}
         <div style={{
@@ -101,39 +102,12 @@ export default function Sprint() {
             transition={{ delay: 0.4 }}
             style={{ marginTop: '3rem', display: 'flex', alignItems: 'flex-start', borderBottom: '1px solid rgba(255,255,255,0.1)', paddingBottom: '1.5rem' }}
           >
-            <div style={{ position: 'relative', display: 'inline-block' }}>
-              <select 
-                value={selectedYear} 
-                onChange={(e) => setSelectedYear(Number(e.target.value))}
-                style={{
-                  appearance: 'none',
-                  background: 'var(--color-bg-elevated)',
-                  color: 'var(--color-text-primary)',
-                  border: '1px solid var(--color-border)',
-                  padding: '0.8rem 3rem 0.8rem 1.5rem',
-                  fontSize: '1.2rem',
-                  fontWeight: 600,
-                  fontFamily: 'var(--font-heading)',
-                  borderRadius: 'var(--radius-sm)',
-                  cursor: 'pointer',
-                  outline: 'none',
-                  boxShadow: 'var(--shadow-panel)',
-                  transition: 'border-color var(--transition-fast)'
-                }}
-                onMouseOver={(e) => e.target.style.borderColor = 'var(--color-border-hover)'}
-                onMouseOut={(e) => e.target.style.borderColor = 'var(--color-border)'}
-              >
-                {years.map(y => (
-                  <option key={y} value={y}>{y} SPRINT CALENDAR</option>
-                ))}
-              </select>
-              <div style={{
-                position: 'absolute', right: '1.2rem', top: '50%', transform: 'translateY(-50%)',
-                pointerEvents: 'none', color: 'var(--color-accent-primary)', fontSize: '0.8rem'
-              }}>
-                ▼
-              </div>
-            </div>
+            <CustomDropdown 
+              value={selectedYear}
+              onChange={(val) => setSelectedYear(val)}
+              options={years.map(y => ({ value: y, label: `${y} SPRINT CALENDAR` }))}
+              style={{ minWidth: '220px' }}
+            />
           </motion.div>
         </div>
       </div>

@@ -5,6 +5,7 @@ import { f1Api } from '../utils/api';
 import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
 import TeamCard from '../components/team/TeamCard';
+import CustomDropdown from '../components/ui/CustomDropdown';
 
 export default function Teams() {
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
@@ -138,7 +139,7 @@ export default function Teams() {
     <div style={{ background: 'var(--color-bg-base)', minHeight: '100vh', paddingBottom: '10vw' }}>
       
       {/* PAGE HEADER - Strategic/Technical Vibe */}
-      <div style={{ padding: '6vw 5vw 3vw 5vw', position: 'relative', overflow: 'hidden', borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+      <div style={{ padding: '6vw 5vw 3vw 5vw', position: 'relative', zIndex: 20, borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
         
         {/* Subtle grid background for the header */}
         <div style={{
@@ -164,39 +165,12 @@ export default function Teams() {
               <div style={{ fontSize: '0.7rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', letterSpacing: '0.2em' }}>
                 Select Season Data
               </div>
-              <div style={{ position: 'relative', display: 'inline-block' }}>
-                <select 
-                  value={selectedYear} 
-                  onChange={(e) => setSelectedYear(Number(e.target.value))}
-                  style={{
-                    appearance: 'none',
-                    background: 'var(--color-bg-panel)',
-                    color: 'var(--color-text-primary)',
-                    border: '1px solid var(--color-border)',
-                    padding: '0.5rem 2.5rem 0.5rem 1rem',
-                    fontSize: '1rem',
-                    fontWeight: 600,
-                    fontFamily: 'var(--font-heading)',
-                    borderRadius: 'var(--radius-sm)',
-                    cursor: 'pointer',
-                    outline: 'none',
-                    boxShadow: 'var(--shadow-panel)',
-                    transition: 'border-color var(--transition-fast)'
-                  }}
-                  onMouseOver={(e) => e.target.style.borderColor = 'var(--color-border-hover)'}
-                  onMouseOut={(e) => e.target.style.borderColor = 'var(--color-border)'}
-                >
-                  {years.map(y => (
-                    <option key={y} value={y}>{y} SEASON</option>
-                  ))}
-                </select>
-                <div style={{
-                  position: 'absolute', right: '1rem', top: '50%', transform: 'translateY(-50%)',
-                  pointerEvents: 'none', color: 'var(--color-accent-primary)', fontSize: '0.7rem'
-                }}>
-                  ▼
-                </div>
-              </div>
+              <CustomDropdown 
+                value={selectedYear}
+                onChange={(val) => setSelectedYear(val)}
+                options={years.map(y => ({ value: y, label: `${y} SEASON` }))}
+                style={{ fontSize: '1rem', minWidth: '160px', padding: '0.5rem 0' }}
+              />
             </div>
           </motion.div>
         </div>
