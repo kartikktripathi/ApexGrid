@@ -109,10 +109,10 @@ export default function Home() {
       <HeroSection scrollYProgress={scrollYProgress} onExplore={() => navigate('/seasons')} />
 
       {/* 2. DRIVER STANDINGS */}
-      {!loading && drivers.length > 0 && <StandingsSection drivers={drivers} />}
+      <StandingsSection drivers={drivers} loading={loading} />
 
       {/* 3. RACE CALENDAR TIMELINE */}
-      {!loading && races.length > 0 && <CalendarSection races={races} />}
+      <CalendarSection races={races} loading={loading} />
 
       {/* 4. FOOTER */}
       <Footer />
@@ -169,7 +169,7 @@ function HeroSection({ scrollYProgress, onExplore }) {
   );
 }
 
-function StandingsSection({ drivers }) {
+function StandingsSection({ drivers, loading }) {
   const [hoveredIndex, setHoveredIndex] = useState(null);
 
   return (
@@ -178,7 +178,10 @@ function StandingsSection({ drivers }) {
         <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', margin: 0 }}>Driver<br /><span style={{ color: 'var(--color-text-secondary)' }}>Standings</span></h2>
       </div>
 
-      <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {(loading || drivers.length === 0) ? (
+        <StandingsSkeleton />
+      ) : (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
         {drivers.map((d, i) => (
           <motion.div
             key={i}
@@ -218,18 +221,22 @@ function StandingsSection({ drivers }) {
             </div>
           </motion.div>
         ))}
-      </div>
+        </div>
+      )}
     </section>
   );
 }
 
-function CalendarSection({ races }) {
+function CalendarSection({ races, loading }) {
   return (
     <section style={{ padding: '10vw 5vw', background: 'var(--color-bg-base)' }}>
       <div style={{ maxWidth: '800px' }}>
         <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', marginBottom: '4rem' }}>Race <span style={{ color: 'var(--color-text-secondary)' }}>Calendar</span></h2>
 
-        <div style={{ display: 'flex', flexDirection: 'column' }}>
+        {(loading || races.length === 0) ? (
+          <CalendarSkeleton />
+        ) : (
+          <div style={{ display: 'flex', flexDirection: 'column' }}>
           {races.map((r, i) => (
             <motion.div
               key={i}
@@ -269,9 +276,77 @@ function CalendarSection({ races }) {
               )}
             </motion.div>
           ))}
-        </div>
+          </div>
+        )}
       </div>
     </section>
+  );
+}
+
+function StandingsSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+      {[1, 2, 3, 4, 5].map((item) => (
+        <div key={item} style={{
+          display: 'flex', alignItems: 'center', padding: '1.5rem 2rem',
+          border: '1px solid transparent',
+          borderRadius: 'var(--radius-md)',
+          position: 'relative',
+          overflow: 'hidden',
+          background: 'rgba(255,255,255,0.02)'
+        }}>
+          <motion.div
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+            style={{
+              position: 'absolute', top: 0, bottom: 0, width: '50%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+              zIndex: 1
+            }}
+          />
+          <div style={{ flex: '0 0 60px' }}>
+            <div style={{ width: '40px', height: '30px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+          </div>
+          <div style={{ flex: '1', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ width: '150px', height: '24px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+            <div style={{ width: '100px', height: '14px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+          </div>
+          <div style={{ display: 'flex', alignItems: 'flex-end', gap: '0.5rem' }}>
+            <div style={{ width: '50px', height: '30px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function CalendarSkeleton() {
+  return (
+    <div style={{ display: 'flex', flexDirection: 'column' }}>
+      {[1, 2, 3, 4, 5].map((item) => (
+        <div key={item} style={{
+          display: 'flex', borderBottom: '1px solid var(--color-border)', padding: '2rem 0', gap: '3rem', position: 'relative', overflow: 'hidden'
+        }}>
+          <motion.div
+            animate={{ x: ['-100%', '200%'] }}
+            transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+            style={{
+              position: 'absolute', top: 0, bottom: 0, width: '50%',
+              background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.02), transparent)',
+              zIndex: 1
+            }}
+          />
+          <div style={{ flex: '0 0 100px', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ width: '60px', height: '12px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+            <div style={{ width: '80px', height: '20px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+          </div>
+          <div style={{ flex: 1, borderLeft: '1px solid rgba(255,255,255,0.05)', paddingLeft: '3rem', display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+            <div style={{ width: '200px', height: '28px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+            <div style={{ width: '150px', height: '16px', background: 'rgba(255,255,255,0.1)', borderRadius: '4px' }} />
+          </div>
+        </div>
+      ))}
+    </div>
   );
 }
 
