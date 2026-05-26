@@ -116,10 +116,8 @@ export default function Drivers() {
         </div>
       </div>
 
-      {isLoading ? (
+      {isLoading || errorDrivers || errorChamp ? (
         <LoadingState message={`Loading ${selectedYear} grid data...`} />
-      ) : errorDrivers || errorChamp ? (
-        <ErrorState message={errorDrivers || errorChamp} onRetry={() => { refetchDrivers(); refetchChamp(); }} />
       ) : sessionKey === 'invalid' || allDrivers.length === 0 ? (
         <div className="state-container">
           <p className="text-muted" style={{ fontSize: '1.2rem' }}>No grid data available for the {selectedYear} season.</p>
