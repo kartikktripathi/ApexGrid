@@ -28,7 +28,6 @@ export default function DriverProfile() {
   const [sessions, setSessions] = useState([]);
   const [qualSessions, setQualSessions] = useState([]);
   const [positions, setPositions] = useState([]);
-  const [stints, setStints] = useState([]);
 
   // Fetch static/career data once per driverNumber
   useEffect(() => {
@@ -87,25 +86,23 @@ export default function DriverProfile() {
     };
   }, [driverNumber]);
 
-  // Fetch OpenF1 season positions/stints when selectedYear changes
+  // Fetch OpenF1 season positions when selectedYear changes
   useEffect(() => {
     let isMounted = true;
     let timerId = null;
 
     const fetchSeasonDetails = async () => {
       try {
-        const [raceData, qualData, positionData, stintData] = await Promise.all([
+        const [raceData, qualData, positionData] = await Promise.all([
           f1Api.getSessions(selectedYear, 'Race'),
           f1Api.getSessions(selectedYear, 'Qualifying'),
-          fetch(`https://api.openf1.org/v1/position?driver_number=${driverNumber}&date>=${selectedYear}-01-01&date<=${selectedYear}-12-31`).then(res => res.json()),
-          fetch(`https://api.openf1.org/v1/stints?driver_number=${driverNumber}`).then(res => res.json())
+          fetch(`https://api.openf1.org/v1/position?driver_number=${driverNumber}&date>=${selectedYear}-01-01&date<=${selectedYear}-12-31`).then(res => res.json())
         ]);
 
         if (!isMounted) return;
         setSessions(raceData || []);
         setQualSessions(qualData || []);
         setPositions(Array.isArray(positionData) ? positionData : []);
-        setStints(Array.isArray(stintData) ? stintData : []);
       } catch (e) {
         console.error("Failed to fetch OpenF1 season details:", e);
         if (isMounted) {
@@ -124,12 +121,10 @@ export default function DriverProfile() {
   // Processes race & qualifying stats for the selected year
   const seasonStats = useMemo(() => {
     if (!sessions.length || !positions.length) {
-      return { races: [], totalLaps: 0, totalLapsLed: 0, totalPoles: 0, totalWins: 0, totalPoints: 0 };
+      return { races: [], totalPoles: 0, totalWins: 0, totalPoints: 0 };
     }
 
     const POINTS_MAP = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
-    let totalLaps = 0;
-    let totalLapsLed = 0;
     let totalPoles = 0;
     let totalWins = 0;
     let totalPoints = 0;
@@ -154,18 +149,7 @@ export default function DriverProfile() {
         : [];
       const qualPos = qualPosRecords.length > 0 ? qualPosRecords[qualPosRecords.length - 1].position : null;
 
-      // 3. Stint laps raced
-      const raceStints = stints.filter(s => s.session_key === race.session_key);
-      const lapsRaced = raceStints.reduce((sum, s) => sum + (s.lap_end - s.lap_start + 1), 0);
-
-      // 4. Laps led estimation based on position P1 duration fraction
-      const p1Entries = racePosRecords.filter(p => p.position === 1).length;
-      const totalEntries = racePosRecords.length;
-      const lapsLed = totalEntries > 0 ? Math.round((p1Entries / totalEntries) * lapsRaced) : 0;
-
       // Aggregates
-      totalLaps += lapsRaced;
-      totalLapsLed += lapsLed;
       if (qualPos === 1) totalPoles++;
       if (finishPos === 1) totalWins++;
       if (finishPos) totalPoints += (POINTS_MAP[finishPos] || 0);
@@ -177,8 +161,6 @@ export default function DriverProfile() {
         country: race.country_name,
         finishPosition: finishPos,
         qualifyingPosition: qualPos,
-        lapsRaced,
-        lapsLed,
         isPole: qualPos === 1,
         isWin: finishPos === 1,
         points: finishPos ? (POINTS_MAP[finishPos] || 0) : 0
@@ -187,13 +169,11 @@ export default function DriverProfile() {
 
     return {
       races: processedRaces,
-      totalLaps,
-      totalLapsLed,
       totalPoles,
       totalWins,
       totalPoints
     };
-  }, [sessions, qualSessions, positions, stints, selectedYear]);
+  }, [sessions, qualSessions, positions, selectedYear]);
 
   // Graph state for hover tooltip
   const [hoveredRoundIdx, setHoveredRoundIdx] = useState(null);
@@ -366,8 +346,6 @@ export default function DriverProfile() {
         {/* Season Statistics Grid */}
         <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem', marginBottom: '5rem' }}>
           {[
-            { label: 'Laps Raced', value: seasonStats.totalLaps, desc: 'Total laps completed' },
-            { label: 'Laps Led', value: seasonStats.totalLapsLed, desc: 'Laps spent in P1' },
             { label: 'Poles', value: seasonStats.totalPoles, desc: 'Qualified P1' },
             { label: 'Wins', value: seasonStats.totalWins, desc: 'Race victories' },
             { label: 'Points Scored', value: seasonStats.totalPoints, desc: 'Estimated season points' }
@@ -656,12 +634,6 @@ export default function DriverProfile() {
                         <span style={{ color: 'var(--color-text-secondary)' }}>Race Finish:</span>
                         <span style={{ fontWeight: 600, color: teamColor }}>
                           {seasonStats.races[hoveredRoundIdx].finishPosition ? `P${seasonStats.races[hoveredRoundIdx].finishPosition}` : 'DNF'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--color-text-secondary)' }}>Laps Raced:</span>
-                        <span style={{ fontWeight: 600, color: '#fff' }}>
-                          {seasonStats.races[hoveredRoundIdx].lapsRaced} laps
                         </span>
                       </div>
                     </div>
