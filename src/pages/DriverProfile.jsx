@@ -18,11 +18,12 @@ export default function DriverProfile() {
   // Loading and Error States
   const [loadingProfile, setLoadingProfile] = useState(true);
   const [error, setError] = useState(null);
+  const [loadingSeasonData, setLoadingSeasonData] = useState(true);
 
   // Driver details & stats
   const [driverInfo, setDriverInfo] = useState(null);
   const [careerStats, setCareerStats] = useState(null);
-  const [constructorTimeline, setConstructorTimeline] = useState([]);
+  const [constructorTimeline, setConstructorTimeline] = useState(null);
 
   // Season timing & positions data (OpenF1)
   const [sessions, setSessions] = useState([]);
@@ -32,7 +33,8 @@ export default function DriverProfile() {
   // Fetch static/career data once per driverNumber
   useEffect(() => {
     let isMounted = true;
-    let timerId = null;
+    let bioTimerId = null;
+    let careerTimerId = null;
 
     const loadDriverBio = async () => {
       try {
@@ -58,8 +60,25 @@ export default function DriverProfile() {
 
         if (!isMounted) return;
         setDriverInfo(currentDriver);
+        setLoadingProfile(false); // Load page structure immediately!
 
-        // 2. Resolve Jolpica Driver ID and fetch career stats
+        // 2. Load career and timeline asynchronously in background
+        loadCareerAndTimeline(currentDriver);
+      } catch (err) {
+        console.error("Failed to load driver bio data", err);
+        if (isMounted) {
+          bioTimerId = setTimeout(loadDriverBio, 10000);
+        }
+      }
+    };
+
+    const loadCareerAndTimeline = async (currentDriver) => {
+      try {
+        if (isMounted) {
+          setCareerStats(null);
+          setConstructorTimeline(null);
+        }
+
         const driverId = await jolpicaApi.getDriverId(currentDriver.name_acronym, currentDriver.driver_number);
         
         const [stats, timeline] = await Promise.all([
@@ -70,11 +89,10 @@ export default function DriverProfile() {
         if (!isMounted) return;
         setCareerStats(stats);
         setConstructorTimeline(timeline);
-        setLoadingProfile(false);
       } catch (err) {
-        console.error("Failed to load driver profile data", err);
+        console.error("Failed to load career/timeline stats", err);
         if (isMounted) {
-          timerId = setTimeout(loadDriverBio, 10000);
+          careerTimerId = setTimeout(() => loadCareerAndTimeline(currentDriver), 10000);
         }
       }
     };
@@ -82,7 +100,8 @@ export default function DriverProfile() {
     loadDriverBio();
     return () => { 
       isMounted = false; 
-      if (timerId) clearTimeout(timerId);
+      if (bioTimerId) clearTimeout(bioTimerId);
+      if (careerTimerId) clearTimeout(careerTimerId);
     };
   }, [driverNumber]);
 
@@ -92,6 +111,7 @@ export default function DriverProfile() {
     let timerId = null;
 
     const fetchSeasonDetails = async () => {
+      if (isMounted) setLoadingSeasonData(true);
       try {
         const [raceData, qualData, positionData] = await Promise.all([
           f1Api.getSessions(selectedYear, 'Race'),
@@ -103,6 +123,7 @@ export default function DriverProfile() {
         setSessions(raceData || []);
         setQualSessions(qualData || []);
         setPositions(Array.isArray(positionData) ? positionData : []);
+        setLoadingSeasonData(false);
       } catch (e) {
         console.error("Failed to fetch OpenF1 season details:", e);
         if (isMounted) {
@@ -363,18 +384,47 @@ export default function DriverProfile() {
               <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
                 {stat.label}
               </span>
-              <span style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff', lineHeight: 1, margin: '0.5rem 0' }}>
-                {stat.value}
-              </span>
+              {loadingSeasonData ? (
+                <div 
+                  className="skeleton-pulse" 
+                  style={{ 
+                    height: '3rem', 
+                    width: '80px', 
+                    background: 'rgba(255,255,255,0.05)', 
+                    borderRadius: 'var(--radius-sm)',
+                    margin: '0.5rem 0'
+                  }} 
+                />
+              ) : (
+                <span style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff', lineHeight: 1, margin: '0.5rem 0' }}>
+                  {stat.value}
+                </span>
+              )}
               <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
-                {stat.desc}
+                {loadingSeasonData ? 'Retrieving data...' : stat.desc}
               </span>
             </motion.div>
           ))}
         </div>
 
         {/* 3. LINEAR POSITION GRAPH */}
-        {seasonStats.races.length === 0 ? (
+        {loadingSeasonData ? (
+          <div 
+            className="glass-panel skeleton-pulse" 
+            style={{ 
+              height: `${chartHeight}px`, 
+              background: 'var(--color-bg-panel)', 
+              borderRadius: 'var(--radius-lg)', 
+              display: 'flex', 
+              alignItems: 'center', 
+              justify: 'center' 
+            }}
+          >
+            <p style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-heading)', fontSize: '1.1rem', letterSpacing: '0.1em' }}>
+              Loading telemetry position data...
+            </p>
+          </div>
+        ) : seasonStats.races.length === 0 ? (
           <div className="state-container" style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
             <p className="text-muted" style={{ fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>No telemetry position data available for {selectedYear}.</p>
           </div>
@@ -662,7 +712,17 @@ export default function DriverProfile() {
               F1 TEAM <span style={{ color: 'var(--color-text-secondary)' }}>TIMELINE</span>
             </h2>
 
-            {constructorTimeline.length === 0 ? (
+            {constructorTimeline === null ? (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>
+                {[1, 2, 3].map((i) => (
+                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingLeft: '0.5rem' }}>
+                    <div className="skeleton-pulse" style={{ height: '0.85rem', width: '70px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
+                    <div className="skeleton-pulse" style={{ height: '1.6rem', width: '220px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
+                    <div className="skeleton-pulse" style={{ height: '0.85rem', width: '130px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
+                  </div>
+                ))}
+              </div>
+            ) : constructorTimeline.length === 0 ? (
               <p style={{ color: 'var(--color-text-muted)' }}>No historical timeline team details available.</p>
             ) : (
               <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>
@@ -741,7 +801,33 @@ export default function DriverProfile() {
               CAREER <span style={{ color: 'var(--color-text-secondary)' }}>SUMMARY</span>
             </h2>
 
-            {careerStats ? (
+            {!careerStats ? (
+              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem 2rem' }}>
+                {[
+                  { label: 'Championships', size: 'huge' },
+                  { label: 'Grand Prix Wins', size: 'large' },
+                  { label: 'Pole Positions', size: 'large' },
+                  { label: 'Podiums', size: 'large' },
+                  { label: 'Races Started', size: 'large' },
+                  { label: 'Best Season', size: 'huge' }
+                ].map((stat, idx) => (
+                  <div key={stat.label} style={{ gridColumn: (idx === 0 || idx === 5) ? '1 / -1' : 'auto' }}>
+                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '0.6rem', fontWeight: 600 }}>
+                      {stat.label}
+                    </span>
+                    <div 
+                      className="skeleton-pulse" 
+                      style={{ 
+                        height: stat.size === 'huge' ? '3.5rem' : '2.5rem', 
+                        width: stat.size === 'huge' ? '70%' : '50%', 
+                        background: 'rgba(255,255,255,0.05)', 
+                        borderRadius: 'var(--radius-sm)' 
+                      }} 
+                    />
+                  </div>
+                ))}
+              </div>
+            ) : (
               <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem 2rem' }}>
                 {[
                   { label: 'Championships', value: careerStats.titles, color: 'var(--color-accent-tertiary)' },
@@ -767,8 +853,6 @@ export default function DriverProfile() {
                   </div>
                 ))}
               </div>
-            ) : (
-              <p style={{ color: 'var(--color-text-muted)' }}>Career summary metrics loading...</p>
             )}
           </div>
 

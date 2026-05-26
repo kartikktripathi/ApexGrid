@@ -1,17 +1,79 @@
 const JOLPICA_BASE_URL = "https://api.jolpi.ca/ergast/f1";
+const CACHE_PREFIX = "apexgrid_jolpica_";
 
-// Cache for mapped driver IDs
+// Cache for mapped driver IDs (in-memory)
 let cachedDrivers = null;
 
 // Simple delay helper to respect API rate limits
 const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
+function getCache(key) {
+  if (typeof window === 'undefined' || !window.localStorage) return null;
+  try {
+    const itemStr = window.localStorage.getItem(CACHE_PREFIX + key);
+    if (!itemStr) return null;
+    const item = JSON.parse(itemStr);
+    const now = Date.now();
+    if (now > item.expiry) {
+      window.localStorage.removeItem(CACHE_PREFIX + key);
+      return null;
+    }
+    return item.value;
+  } catch (e) {
+    return null;
+  }
+}
+
+function setCache(key, value, ttl) {
+  if (typeof window === 'undefined' || !window.localStorage) return;
+  try {
+    const now = Date.now();
+    const item = {
+      value: value,
+      expiry: now + ttl
+    };
+    window.localStorage.setItem(CACHE_PREFIX + key, JSON.stringify(item));
+  } catch (e) {
+    console.warn("Storage write failed (possibly quota full):", e);
+  }
+}
+
+function getTtlForEndpoint(endpoint) {
+  const currentYear = new Date().getFullYear();
+  // 1. Matches /YYYY/ at the start
+  const yearMatch = endpoint.match(/^\/(\d{4})\//);
+  if (yearMatch) {
+    const year = parseInt(yearMatch[1], 10);
+    if (year < currentYear) {
+      return 30 * 24 * 60 * 60 * 1000; // 30 days for past seasons
+    }
+  }
+
+  // 2. Season/Constructor/Drivers list
+  if (endpoint.includes("/seasons.json") || endpoint.includes("/constructors.json") || endpoint.includes("/drivers.json")) {
+    return 24 * 60 * 60 * 1000; // 1 day
+  }
+
+  // 3. Dynamic results, wins, poles, podiums
+  return 10 * 60 * 1000; // 10 minutes for active stats
+}
+
 async function fetchJolpica(endpoint) {
+  const cachedData = getCache(endpoint);
+  if (cachedData !== null) {
+    return cachedData;
+  }
+
   const response = await fetch(`${JOLPICA_BASE_URL}${endpoint}`);
   if (!response.ok) {
     throw new Error(`Jolpica API Error: ${response.status} ${response.statusText}`);
   }
-  return response.json();
+  const data = await response.json();
+  
+  const ttl = getTtlForEndpoint(endpoint);
+  setCache(endpoint, data, ttl);
+  
+  return data;
 }
 
 export const jolpicaApi = {
@@ -47,6 +109,7 @@ export const jolpicaApi = {
       }
     } catch (e) {
       console.error("Failed to map driver dynamically", e);
+      throw e;
     }
 
     // 3. Fallback: slugify code or driver name
@@ -105,6 +168,15 @@ export const jolpicaApi = {
           await delay(150);
         } catch (err) {
           console.error(`Failed to fetch standings for season ${s.season}`, err);
+          
+          // If it's a 404 and it's the current year or future, it's safe to skip it (stands for no data yet)
+          const is404 = err.message.includes("404");
+          const isCurrentOrFuture = parseInt(s.season, 10) >= new Date().getFullYear();
+          if (is404 && isCurrentOrFuture) {
+            console.log(`Skipping standings for current/future season ${s.season} due to 404 (not started/available yet)`);
+            continue;
+          }
+
           if (err.message.includes("429")) {
             await delay(1500); // Backoff and retry once
             try {
@@ -129,7 +201,10 @@ export const jolpicaApi = {
               }
             } catch (e) {
               console.error(`Retry failed for season ${s.season}`, e);
+              throw e;
             }
+          } else {
+            throw err;
           }
         }
       }
@@ -145,15 +220,7 @@ export const jolpicaApi = {
       };
     } catch (error) {
       console.error(`Failed to fetch career stats for driver ${driverId}`, error);
-      return {
-        titles: 0,
-        wins: 0,
-        poles: 0,
-        podiums: 0,
-        starts: 0,
-        bestSeasonPoints: 0,
-        bestSeasonYear: ""
-      };
+      throw error;
     }
   },
 
@@ -186,15 +253,7 @@ export const jolpicaApi = {
             };
           } catch (e) {
             console.error(`Error fetching seasons for constructor ${con.constructorId}`, e);
-            return {
-              id: con.constructorId,
-              name: con.name,
-              nationality: con.nationality,
-              url: con.url,
-              startYear: null,
-              endYear: null,
-              seasonsCount: 0
-            };
+            throw e;
           }
         })
       );
@@ -203,7 +262,7 @@ export const jolpicaApi = {
       return timeline.filter(t => t.startYear !== null).sort((a, b) => a.startYear - b.startYear);
     } catch (error) {
       console.error(`Failed to fetch constructor timeline for driver ${driverId}`, error);
-      return [];
+      throw error;
     }
   }
 };
