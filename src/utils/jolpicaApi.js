@@ -3,42 +3,8 @@ const JOLPICA_BASE_URL = "https://api.jolpi.ca/ergast/f1";
 // Cache for mapped driver IDs
 let cachedDrivers = null;
 
-// Standard F1 driver code to Ergast driverId mapping
-const CODE_TO_ID = {
-  VER: 'max_verstappen',
-  HAM: 'hamilton',
-  NOR: 'norris',
-  PIA: 'piastri',
-  LEC: 'leclerc',
-  SAI: 'sainz',
-  RUS: 'russell',
-  PER: 'perez',
-  GAS: 'gasly',
-  OCO: 'ocon',
-  ALB: 'albon',
-  BOT: 'bottas',
-  TSU: 'tsunoda',
-  STR: 'stroll',
-  MAG: 'magnussen',
-  HUL: 'hulkenberg',
-  LAW: 'lawson',
-  BEA: 'bearman',
-  COL: 'colapinto',
-  BOR: 'bortoleto',
-  HAD: 'hadjar',
-  LIN: 'arvid_lindblad',
-  ANT: 'antonelli'
-};
-
-// Known championships map
-const CHAMPIONSHIPS = {
-  max_verstappen: 4,
-  hamilton: 7,
-  alonso: 2,
-  norris: 1,
-  vettel: 4,
-  raikkonen: 1
-};
+// Simple delay helper to respect API rate limits
+const delay = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 
 async function fetchJolpica(endpoint) {
   const response = await fetch(`${JOLPICA_BASE_URL}${endpoint}`);
@@ -50,49 +16,56 @@ async function fetchJolpica(endpoint) {
 
 export const jolpicaApi = {
   /**
-   * Resolves an OpenF1 driver number or code to a Jolpica driver ID
+   * Resolves an OpenF1 driver number or code to a Jolpica driver ID dynamically
    */
   getDriverId: async (code, number) => {
-    // 1. Check local dictionary first
-    if (code && CODE_TO_ID[code.toUpperCase()]) {
-      return CODE_TO_ID[code.toUpperCase()];
-    }
-
-    // 2. Fetch current season drivers from API if not cached
     try {
+      // 1. Fetch current season drivers from API if not cached
       if (!cachedDrivers) {
         const data = await fetchJolpica("/current/drivers.json?limit=100");
         cachedDrivers = data?.MRData?.DriverTable?.Drivers || [];
       }
 
-      const match = cachedDrivers.find(d => 
+      // Try matching in the current season active grid list
+      let match = cachedDrivers.find(d => 
         (number && d.permanentNumber === number.toString()) || 
         (code && d.code?.toUpperCase() === code.toUpperCase())
       );
+
+      // 2. Fallback: If not in current season, search in 2024 season list
+      if (!match) {
+        const data2024 = await fetchJolpica("/2024/drivers.json?limit=100");
+        const drivers2024 = data2024?.MRData?.DriverTable?.Drivers || [];
+        match = drivers2024.find(d => 
+          (number && d.permanentNumber === number.toString()) || 
+          (code && d.code?.toUpperCase() === code.toUpperCase())
+        );
+      }
 
       if (match) {
         return match.driverId;
       }
     } catch (e) {
-      console.error("Failed to fetch drivers list from Jolpica:", e);
+      console.error("Failed to map driver dynamically", e);
     }
 
-    // 3. Fallback: Slugify name
+    // 3. Fallback: slugify code or driver name
     return code ? code.toLowerCase() : `driver_${number}`;
   },
 
   /**
-   * Fetches complete career statistics for a driver
+   * Fetches complete career statistics for a driver, calculating titles and best seasons dynamically
    */
   getCareerStats: async (driverId) => {
     try {
-      // Fetch total starts, wins, 2nd, and 3rd places in parallel
-      const [startsData, winsData, p2Data, p3Data, polesData] = await Promise.all([
+      // Fetch total starts, wins, 2nd, and 3rd places, poles, and seasons
+      const [startsData, winsData, p2Data, p3Data, polesData, seasonsData] = await Promise.all([
         fetchJolpica(`/drivers/${driverId}/results.json?limit=1`),
         fetchJolpica(`/drivers/${driverId}/results/1.json?limit=1`),
         fetchJolpica(`/drivers/${driverId}/results/2.json?limit=1`),
         fetchJolpica(`/drivers/${driverId}/results/3.json?limit=1`),
-        fetchJolpica(`/drivers/${driverId}/qualifying/1.json?limit=1`)
+        fetchJolpica(`/drivers/${driverId}/qualifying/1.json?limit=1`),
+        fetchJolpica(`/drivers/${driverId}/seasons.json?limit=100`)
       ]);
 
       const starts = parseInt(startsData?.MRData?.total || 0, 10);
@@ -101,23 +74,85 @@ export const jolpicaApi = {
       const p3 = parseInt(p3Data?.MRData?.total || 0, 10);
       const poles = parseInt(polesData?.MRData?.total || 0, 10);
       const podiums = wins + p2 + p3;
-      const titles = CHAMPIONSHIPS[driverId] || 0;
+      const seasons = seasonsData?.MRData?.SeasonTable?.Seasons || [];
+
+      // Retrieve standings sequentially with 150ms delay to count championships and best season points
+      let championshipsCount = 0;
+      let bestSeasonPoints = 0;
+      let bestSeasonYear = "";
+
+      for (const s of seasons) {
+        try {
+          const res = await fetchJolpica(`/${s.season}/drivers/${driverId}/driverStandings.json`);
+          const list = res?.MRData?.StandingsTable?.StandingsLists || [];
+          if (list.length > 0) {
+            const driverStandings = list[0].DriverStandings || [];
+            if (driverStandings.length > 0) {
+              const standing = driverStandings[0];
+              const pos = standing.position;
+              const pts = parseFloat(standing.points || 0);
+              const season = list[0].season;
+              
+              if (pos === "1") {
+                championshipsCount++;
+              }
+              if (pts > bestSeasonPoints) {
+                bestSeasonPoints = pts;
+                bestSeasonYear = season;
+              }
+            }
+          }
+          await delay(150);
+        } catch (err) {
+          console.error(`Failed to fetch standings for season ${s.season}`, err);
+          if (err.message.includes("429")) {
+            await delay(1500); // Backoff and retry once
+            try {
+              const res = await fetchJolpica(`/${s.season}/drivers/${driverId}/driverStandings.json`);
+              const list = res?.MRData?.StandingsTable?.StandingsLists || [];
+              if (list.length > 0) {
+                const driverStandings = list[0].DriverStandings || [];
+                if (driverStandings.length > 0) {
+                  const standing = driverStandings[0];
+                  const pos = standing.position;
+                  const pts = parseFloat(standing.points || 0);
+                  const season = list[0].season;
+                  
+                  if (pos === "1") {
+                    championshipsCount++;
+                  }
+                  if (pts > bestSeasonPoints) {
+                    bestSeasonPoints = pts;
+                    bestSeasonYear = season;
+                  }
+                }
+              }
+            } catch (e) {
+              console.error(`Retry failed for season ${s.season}`, e);
+            }
+          }
+        }
+      }
 
       return {
-        titles,
+        titles: championshipsCount,
         wins,
         poles,
         podiums,
-        starts
+        starts,
+        bestSeasonPoints,
+        bestSeasonYear
       };
     } catch (error) {
       console.error(`Failed to fetch career stats for driver ${driverId}`, error);
       return {
-        titles: CHAMPIONSHIPS[driverId] || 0,
+        titles: 0,
         wins: 0,
         poles: 0,
         podiums: 0,
-        starts: 0
+        starts: 0,
+        bestSeasonPoints: 0,
+        bestSeasonYear: ""
       };
     }
   },

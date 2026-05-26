@@ -776,14 +776,15 @@ export default function DriverProfile() {
                   { label: 'Grand Prix Wins', value: careerStats.wins, color: '#fff' },
                   { label: 'Pole Positions', value: careerStats.poles, color: '#fff' },
                   { label: 'Podiums', value: careerStats.podiums, color: '#fff' },
-                  { label: 'Races Started', value: careerStats.starts, color: 'var(--color-text-secondary)' }
+                  { label: 'Races Started', value: careerStats.starts, color: 'var(--color-text-secondary)' },
+                  { label: 'Best Season', value: careerStats.bestSeasonPoints ? `${careerStats.bestSeasonYear} (${careerStats.bestSeasonPoints} PTS)` : 'N/A', color: 'var(--color-accent-secondary)' }
                 ].map((stat, idx) => (
-                  <div key={stat.label} style={{ gridColumn: idx === 0 ? '1 / -1' : 'auto' }}>
+                  <div key={stat.label} style={{ gridColumn: (idx === 0 || idx === 5) ? '1 / -1' : 'auto' }}>
                     <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
                       {stat.label}
                     </span>
                     <span style={{ 
-                      fontSize: idx === 0 ? '4.5rem' : '2.8rem', 
+                      fontSize: (idx === 0 || idx === 5) ? '4rem' : '2.8rem', 
                       fontFamily: 'var(--font-heading)', 
                       fontWeight: 800, 
                       color: stat.color, 
