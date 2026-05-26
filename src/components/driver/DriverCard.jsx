@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
 
 export function FeaturedDriverCard({ driver, rank }) {
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const teamColor = driver.team_colour ? `#${driver.team_colour}` : "#e10600";
   const driverName = driver.full_name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim();
@@ -12,6 +14,7 @@ export function FeaturedDriverCard({ driver, rank }) {
 
   return (
     <motion.div 
+      onClick={() => navigate(`/drivers/${driver.driver_number}`)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 30 }}
@@ -115,12 +118,14 @@ export function FeaturedDriverCard({ driver, rank }) {
 }
 
 export function LeaderboardRow({ driver, rank }) {
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const teamColor = driver.team_colour ? `#${driver.team_colour}` : "#e10600";
   const driverName = driver.full_name || `${driver.first_name || ''} ${driver.last_name || ''}`.trim();
 
   return (
     <motion.div 
+      onClick={() => navigate(`/drivers/${driver.driver_number}`)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 20 }}
