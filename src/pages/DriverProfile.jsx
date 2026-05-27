@@ -317,7 +317,7 @@ export default function DriverProfile() {
     target: timelineRef,
     offset: ["start center", "end center"]
   });
-  const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
+  const scaleY = useTransform(scrollYProgress, [0, 0.7], [0, 1]);
 
   if (!currentDriverInfo && loadingProfile) {
     return <LoadingState message={`Opening driver profile ${driverSlug}...`} />;
@@ -851,7 +851,7 @@ export default function DriverProfile() {
 
                 <motion.div style={{
                   position: 'absolute', left: '-2.5rem', top: '10px', bottom: '10px', width: '2px',
-                  background: 'linear-gradient(to bottom, var(--color-accent-primary), var(--color-accent-secondary))',
+                  background: teamColor,
                   scaleY, transformOrigin: 'top'
                 }} />
 
@@ -868,13 +868,13 @@ export default function DriverProfile() {
                     <div style={{
                       position: 'absolute', left: '-3rem', top: '6px',
                       width: '18px', height: '18px', borderRadius: '50%',
-                      background: 'var(--color-bg-base)', border: `2px solid ${idx === constructorTimeline.length - 1 ? 'var(--color-accent-primary)' : 'rgba(255,255,255,0.2)'}`,
+                      background: 'var(--color-bg-base)', border: `2px solid ${idx === constructorTimeline.length - 1 ? teamColor : 'rgba(255,255,255,0.2)'}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       zIndex: 5
                     }}>
                       <div style={{
                         width: '6px', height: '6px', borderRadius: '50%',
-                        background: idx === constructorTimeline.length - 1 ? 'var(--color-accent-primary)' : 'rgba(255,255,255,0.2)'
+                        background: idx === constructorTimeline.length - 1 ? teamColor : 'rgba(255,255,255,0.2)'
                       }} />
                     </div>
 
@@ -884,7 +884,7 @@ export default function DriverProfile() {
                         fontSize: '0.8rem',
                         fontFamily: 'var(--font-heading)',
                         fontWeight: 600,
-                        color: idx === constructorTimeline.length - 1 ? 'var(--color-accent-primary)' : 'var(--color-text-muted)',
+                        color: idx === constructorTimeline.length - 1 ? teamColor : 'var(--color-text-muted)',
                         letterSpacing: '0.1em'
                       }}>
                         {item.startYear} {item.endYear && item.endYear !== item.startYear ? `– ${item.endYear}` : ''}
