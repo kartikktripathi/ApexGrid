@@ -27,7 +27,7 @@ export function FeaturedDriverCard({ driver, rank }) {
 
   return (
     <motion.div 
-      onClick={() => navigate(`/drivers/${getDriverSlug(driver.first_name, driver.last_name, driver.full_name)}`)}
+      onClick={() => navigate(`/drivers/${getDriverSlug(driver.first_name, driver.last_name, driver.full_name)}`, { state: { driver } })}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 30 }}
@@ -138,7 +138,7 @@ export function LeaderboardRow({ driver, rank }) {
 
   return (
     <motion.div 
-      onClick={() => navigate(`/drivers/${getDriverSlug(driver.first_name, driver.last_name, driver.full_name)}`)}
+      onClick={() => navigate(`/drivers/${getDriverSlug(driver.first_name, driver.last_name, driver.full_name)}`, { state: { driver } })}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 20 }}

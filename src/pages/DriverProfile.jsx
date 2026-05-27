@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate } from 'react-router-dom';
+import { useParams, useNavigate, useLocation } from 'react-router-dom';
 import { motion, useScroll, useTransform } from 'framer-motion';
 import { f1Api } from '../utils/api';
 import { jolpicaApi } from '../utils/jolpicaApi';
@@ -23,18 +23,21 @@ const getDriverSlug = (first, last, fullName) => {
 export default function DriverProfile() {
   const { driverSlug } = useParams();
   const navigate = useNavigate();
+  const location = useLocation();
+  const initialDriver = location.state?.driver;
 
   // Seasons list
   const years = [2026, 2025, 2024, 2023];
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
 
   // Loading and Error States
-  const [loadingProfile, setLoadingProfile] = useState(true);
+  const [loadingProfile, setLoadingProfile] = useState(() => !initialDriver);
   const [error, setError] = useState(null);
   const [loadingSeasonData, setLoadingSeasonData] = useState(true);
 
   // Driver details & stats
-  const [driverInfo, setDriverInfo] = useState(null);
+  const [driverInfo, setDriverInfo] = useState(() => initialDriver || null);
+  const currentDriverInfo = driverInfo || initialDriver;
   const [careerStats, setCareerStats] = useState(null);
   const [constructorTimeline, setConstructorTimeline] = useState(null);
 
@@ -130,7 +133,7 @@ export default function DriverProfile() {
     let timerId = null;
 
     const fetchSeasonDetails = async () => {
-      if (!driverInfo) return; // Wait until basic driver info is loaded
+      if (!currentDriverInfo) return; // Wait until basic driver info is loaded
       if (isMounted) setLoadingSeasonData(true);
       try {
         const [raceData, qualData] = await Promise.all([
@@ -215,7 +218,7 @@ export default function DriverProfile() {
       isMounted = false; 
       if (timerId) clearTimeout(timerId);
     };
-  }, [driverSlug, selectedYear, driverInfo]);
+  }, [driverSlug, selectedYear, currentDriverInfo]);
 
   // Processes race & qualifying stats for the selected year
   const seasonStats = useMemo(() => {
@@ -284,16 +287,16 @@ export default function DriverProfile() {
   });
   const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
-  if (loadingProfile) {
+  if (!currentDriverInfo && loadingProfile) {
     return <LoadingState message={`Opening driver profile ${driverSlug}...`} />;
   }
 
-  if (error || !driverInfo) {
+  if (error || (!currentDriverInfo && !loadingProfile)) {
     return <ErrorState message={error || "Driver profile not found."} onRetry={() => navigate('/drivers')} />;
   }
 
-  const teamColor = driverInfo.team_colour ? `#${driverInfo.team_colour}` : "#e10600";
-  const driverFullName = driverInfo.full_name || `${driverInfo.first_name || ''} ${driverInfo.last_name || ''}`.trim();
+  const teamColor = currentDriverInfo.team_colour ? `#${currentDriverInfo.team_colour}` : "#e10600";
+  const driverFullName = currentDriverInfo.full_name || `${currentDriverInfo.first_name || ''} ${currentDriverInfo.last_name || ''}`.trim();
 
   // Rendering parameters for custom SVG graph
   const paddingLeft = 60;
@@ -354,7 +357,7 @@ export default function DriverProfile() {
           fontWeight: 900, color: 'rgba(255, 255, 255, 0.02)',
           zIndex: 1, userSelect: 'none', lineHeight: 0.8
         }}>
-          {driverInfo.driver_number}
+          {currentDriverInfo.driver_number}
         </div>
 
         <div style={{ position: 'relative', zIndex: 10, display: 'flex', gap: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
@@ -380,7 +383,7 @@ export default function DriverProfile() {
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase'
               }}>
-                {driverInfo.team_name}
+                {currentDriverInfo.team_name}
               </span>
               <div style={{ width: '40px', height: '1px', background: 'var(--color-border)' }} />
               <span style={{ 
@@ -389,16 +392,16 @@ export default function DriverProfile() {
                 color: 'var(--color-text-muted)',
                 letterSpacing: '0.1em'
               }}>
-                NO. {driverInfo.driver_number}
+                NO. {currentDriverInfo.driver_number}
               </span>
             </div>
 
             <h1 style={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)', lineHeight: 0.9, margin: 0, fontFamily: 'var(--font-heading)' }}>
-              {driverInfo.first_name && <span style={{ display: 'block', fontWeight: 300, fontSize: '0.45em', color: 'var(--color-text-secondary)', marginBottom: '0.2rem' }}>{driverInfo.first_name}</span>}
-              <span style={{ fontWeight: 800 }}>{driverInfo.last_name ? driverInfo.last_name : driverFullName}</span>
+              {currentDriverInfo.first_name && <span style={{ display: 'block', fontWeight: 300, fontSize: '0.45em', color: 'var(--color-text-secondary)', marginBottom: '0.2rem' }}>{currentDriverInfo.first_name}</span>}
+              <span style={{ fontWeight: 800 }}>{currentDriverInfo.last_name ? currentDriverInfo.last_name : driverFullName}</span>
             </h1>
 
-            {driverInfo.country_code && (
+            {currentDriverInfo.country_code && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.5rem' }}>
                 <span style={{ 
                   background: 'var(--color-bg-elevated)', 
@@ -411,7 +414,7 @@ export default function DriverProfile() {
                   fontFamily: 'var(--font-heading)',
                   color: 'var(--color-text-secondary)'
                 }}>
-                  {driverInfo.country_code}
+                  {currentDriverInfo.country_code}
                 </span>
                 <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Nationality</span>
               </div>
