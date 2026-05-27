@@ -139,17 +139,39 @@ export default function DriverProfile() {
         ]);
 
         let seasonDriverNumber = null;
+        let successfulFetches = 0;
+
         if (raceData && raceData.length > 0) {
-          const firstSessionKey = raceData[0].session_key;
-          // Fetch drivers in that session to resolve the driver's number for that season
-          const res = await fetch(`https://api.openf1.org/v1/drivers?session_key=${firstSessionKey}`);
-          if (res.ok) {
-            const list = await res.json();
-            const match = list.find(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
-            if (match) {
-              seasonDriverNumber = match.driver_number;
+          // Sort race sessions chronologically (ascending)
+          const sortedRaces = [...raceData].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+          
+          // Find the first chronological session that has driver records populated
+          for (const race of sortedRaces) {
+            try {
+              const res = await fetch(`https://api.openf1.org/v1/drivers?session_key=${race.session_key}`);
+              if (!res.ok) {
+                throw new Error(`OpenF1 Driver API error: ${res.status}`);
+              }
+              const list = await res.json();
+              successfulFetches++;
+
+              if (list && list.length > 0) {
+                const match = list.find(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
+                if (match) {
+                  seasonDriverNumber = match.driver_number;
+                  break; // Found their number! Exit chronological search
+                }
+              }
+            } catch (err) {
+              console.warn(`Could not resolve driver number in session ${race.session_key}`, err);
             }
           }
+        }
+
+        // If we were unable to successfully query ANY session due to network/server errors,
+        // we throw an error to trigger the 10-second retry loop and keep the loading skeleton active!
+        if (raceData && raceData.length > 0 && successfulFetches === 0) {
+          throw new Error("Unable to fetch driver lists for any sessions.");
         }
 
         // If the driver did not participate in this season, we set sessions and positions to empty
@@ -162,8 +184,18 @@ export default function DriverProfile() {
           return;
         }
 
-        // Fetch telemetry positions with the resolved season-specific driver number!
-        const positionData = await fetch(`https://api.openf1.org/v1/position?driver_number=${seasonDriverNumber}&date>=${selectedYear}-01-01&date<=${selectedYear}-12-31`).then(res => res.json());
+        // Fetch standings with the resolved season-specific driver number!
+        const res = await fetch(`https://api.openf1.org/v1/session_result?driver_number=${seasonDriverNumber}`);
+        if (!res.ok) {
+          throw new Error(`OpenF1 session_result API error: ${res.status}`);
+        }
+        const positionData = await res.json();
+
+        // Validate that we got results if there are past races
+        const hasPastRaces = raceData && raceData.some(race => new Date(race.date_start) < new Date());
+        if (hasPastRaces && (!Array.isArray(positionData) || positionData.length === 0)) {
+          throw new Error("No session results returned by OpenF1 API, even though past races exist.");
+        }
 
         if (!isMounted) return;
         setSessions(raceData || []);
@@ -203,23 +235,22 @@ export default function DriverProfile() {
 
     const processedRaces = sortedRaces.map((race, idx) => {
       // 1. Race positions
-      const racePosRecords = positions
-        .filter(p => p.session_key === race.session_key)
-        .sort((a, b) => new Date(a.date) - new Date(b.date));
-
-      const finishPos = racePosRecords.length > 0 ? racePosRecords[racePosRecords.length - 1].position : null;
+      const raceResult = positions.find(p => p.session_key === race.session_key);
+      const finishPos = raceResult ? raceResult.position : null;
 
       // 2. Qualifying session matching
       const qualSession = qualSessions.find(q => q.meeting_key === race.meeting_key);
-      const qualPosRecords = qualSession 
-        ? positions.filter(p => p.session_key === qualSession.session_key).sort((a, b) => new Date(a.date) - new Date(b.date))
-        : [];
-      const qualPos = qualPosRecords.length > 0 ? qualPosRecords[qualPosRecords.length - 1].position : null;
+      const qualResult = qualSession ? positions.find(p => p.session_key === qualSession.session_key) : null;
+      const qualPos = qualResult ? qualResult.position : null;
 
       // Aggregates
       if (qualPos === 1) totalPoles++;
       if (finishPos === 1) totalWins++;
-      if (finishPos) totalPoints += (POINTS_MAP[finishPos] || 0);
+      
+      const pointsScored = raceResult 
+        ? (typeof raceResult.points === 'number' ? raceResult.points : (POINTS_MAP[finishPos] || 0)) 
+        : 0;
+      totalPoints += pointsScored;
 
       return {
         round: idx + 1,
@@ -230,7 +261,7 @@ export default function DriverProfile() {
         qualifyingPosition: qualPos,
         isPole: qualPos === 1,
         isWin: finishPos === 1,
-        points: finishPos ? (POINTS_MAP[finishPos] || 0) : 0
+        points: pointsScored
       };
     });
 
