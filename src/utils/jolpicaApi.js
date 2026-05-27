@@ -76,6 +76,34 @@ async function fetchJolpica(endpoint) {
   return data;
 }
 
+async function isSeasonCompleted(season) {
+  const currentYear = new Date().getFullYear();
+  const seasonYear = parseInt(season, 10);
+  
+  if (seasonYear < currentYear) {
+    return true;
+  }
+  
+  if (seasonYear > currentYear) {
+    return false;
+  }
+  
+  try {
+    const data = await fetchJolpica(`/${season}.json`);
+    const races = data?.MRData?.RaceTable?.Races || [];
+    if (races.length === 0) return false;
+    
+    const lastRace = races[races.length - 1];
+    if (!lastRace.date) return false;
+    
+    const lastRaceDate = new Date(`${lastRace.date}T${lastRace.time || "23:59:59Z"}`);
+    return Date.now() > lastRaceDate.getTime();
+  } catch (e) {
+    console.error(`Failed to fetch schedule for season ${season}`, e);
+    return false;
+  }
+}
+
 export const jolpicaApi = {
   /**
    * Resolves an OpenF1 driver number or code to a Jolpica driver ID dynamically
@@ -156,12 +184,15 @@ export const jolpicaApi = {
               const pts = parseFloat(standing.points || 0);
               const season = list[0].season;
               
-              if (pos === "1") {
-                championshipsCount++;
-              }
-              if (pts > bestSeasonPoints) {
-                bestSeasonPoints = pts;
-                bestSeasonYear = season;
+              const completed = await isSeasonCompleted(s.season);
+              if (completed) {
+                if (pos === "1") {
+                  championshipsCount++;
+                }
+                if (pts > bestSeasonPoints) {
+                  bestSeasonPoints = pts;
+                  bestSeasonYear = season;
+                }
               }
             }
           }
@@ -190,12 +221,15 @@ export const jolpicaApi = {
                   const pts = parseFloat(standing.points || 0);
                   const season = list[0].season;
                   
-                  if (pos === "1") {
-                    championshipsCount++;
-                  }
-                  if (pts > bestSeasonPoints) {
-                    bestSeasonPoints = pts;
-                    bestSeasonYear = season;
+                  const completed = await isSeasonCompleted(s.season);
+                  if (completed) {
+                    if (pos === "1") {
+                      championshipsCount++;
+                    }
+                    if (pts > bestSeasonPoints) {
+                      bestSeasonPoints = pts;
+                      bestSeasonYear = season;
+                    }
                   }
                 }
               }
