@@ -17,7 +17,7 @@ function App() {
         <Routes>
           <Route path="/" element={<Home />} />
           <Route path="/drivers" element={<Drivers />} />
-          <Route path="/drivers/:driverNumber" element={<DriverProfile />} />
+          <Route path="/drivers/:driverSlug" element={<DriverProfile />} />
           <Route path="/teams" element={<Teams />} />
           <Route path="/seasons" element={<Seasons />} />
           <Route path="/sprint" element={<Sprint />} />

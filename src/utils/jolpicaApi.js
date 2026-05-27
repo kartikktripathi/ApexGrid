@@ -108,39 +108,56 @@ export const jolpicaApi = {
   /**
    * Resolves an OpenF1 driver number or code to a Jolpica driver ID dynamically
    */
-  getDriverId: async (code, number) => {
+  getDriverId: async (firstName, lastName, code, number) => {
     try {
+      const clean = (s) => (s || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '').trim();
+      const fnClean = clean(firstName);
+      const lnClean = clean(lastName);
+
       // 1. Fetch current season drivers from API if not cached
       if (!cachedDrivers) {
         const data = await fetchJolpica("/current/drivers.json?limit=100");
         cachedDrivers = data?.MRData?.DriverTable?.Drivers || [];
       }
 
-      // Try matching in the current season active grid list
-      let match = cachedDrivers.find(d => 
-        (number && d.permanentNumber === number.toString()) || 
-        (code && d.code?.toUpperCase() === code.toUpperCase())
-      );
+      // Try matching by first and last name in current season
+      let match = cachedDrivers.find(d => {
+        const dgClean = clean(d.givenName);
+        const dfClean = clean(d.familyName);
+        return dfClean === lnClean || (dfClean.includes(lnClean) && dgClean.includes(fnClean)) || (lnClean.includes(dfClean) && fnClean.includes(dgClean));
+      });
 
       // 2. Fallback: If not in current season, search in 2024 season list
       if (!match) {
         const data2024 = await fetchJolpica("/2024/drivers.json?limit=100");
         const drivers2024 = data2024?.MRData?.DriverTable?.Drivers || [];
-        match = drivers2024.find(d => 
-          (number && d.permanentNumber === number.toString()) || 
-          (code && d.code?.toUpperCase() === code.toUpperCase())
-        );
+        match = drivers2024.find(d => {
+          const dgClean = clean(d.givenName);
+          const dfClean = clean(d.familyName);
+          return dfClean === lnClean || (dfClean.includes(lnClean) && dgClean.includes(fnClean)) || (lnClean.includes(dfClean) && fnClean.includes(dgClean));
+        });
+      }
+
+      // 3. Fallback: Search all drivers historically in Jolpica
+      if (!match) {
+        const dataAll = await fetchJolpica(`/drivers.json?limit=1000`);
+        const driversAll = dataAll?.MRData?.DriverTable?.Drivers || [];
+        match = driversAll.find(d => {
+          const dgClean = clean(d.givenName);
+          const dfClean = clean(d.familyName);
+          return dfClean === lnClean || (dfClean.includes(lnClean) && dgClean.includes(fnClean)) || (lnClean.includes(dfClean) && fnClean.includes(dgClean));
+        });
       }
 
       if (match) {
         return match.driverId;
       }
     } catch (e) {
-      console.error("Failed to map driver dynamically", e);
+      console.error("Failed to map driver dynamically by name", e);
       throw e;
     }
 
-    // 3. Fallback: slugify code or driver name
+    // 4. Fallback: slugify code or driver name
     return code ? code.toLowerCase() : `driver_${number}`;
   },
 

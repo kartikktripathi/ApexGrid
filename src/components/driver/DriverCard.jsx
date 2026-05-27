@@ -2,6 +2,19 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { useNavigate } from 'react-router-dom';
 
+export const getDriverSlug = (first, last, fullName) => {
+  const f = first || '';
+  const l = last || '';
+  const name = l ? `${f}_${l}` : (fullName || '');
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+};
+
 export function FeaturedDriverCard({ driver, rank }) {
   const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
@@ -14,7 +27,7 @@ export function FeaturedDriverCard({ driver, rank }) {
 
   return (
     <motion.div 
-      onClick={() => navigate(`/drivers/${driver.driver_number}`)}
+      onClick={() => navigate(`/drivers/${getDriverSlug(driver.first_name, driver.last_name, driver.full_name)}`)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 30 }}
@@ -125,7 +138,7 @@ export function LeaderboardRow({ driver, rank }) {
 
   return (
     <motion.div 
-      onClick={() => navigate(`/drivers/${driver.driver_number}`)}
+      onClick={() => navigate(`/drivers/${getDriverSlug(driver.first_name, driver.last_name, driver.full_name)}`)}
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
       initial={{ opacity: 0, y: 20 }}

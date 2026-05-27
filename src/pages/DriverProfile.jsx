@@ -7,8 +7,21 @@ import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
 import CustomDropdown from '../components/ui/CustomDropdown';
 
+const getDriverSlug = (first, last, fullName) => {
+  const f = first || '';
+  const l = last || '';
+  const name = l ? `${f}_${l}` : (fullName || '');
+  return name
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+};
+
 export default function DriverProfile() {
-  const { driverNumber } = useParams();
+  const { driverSlug } = useParams();
   const navigate = useNavigate();
 
   // Seasons list
@@ -30,7 +43,7 @@ export default function DriverProfile() {
   const [qualSessions, setQualSessions] = useState([]);
   const [positions, setPositions] = useState([]);
 
-  // Fetch static/career data once per driverNumber
+  // Fetch static/career data once per driverSlug
   useEffect(() => {
     let isMounted = true;
     let bioTimerId = null;
@@ -41,15 +54,16 @@ export default function DriverProfile() {
         // 1. Get driver details from OpenF1
         // Try latest session first, fallback to all drivers search
         let driverData = await f1Api.getDrivers('latest');
-        let currentDriver = driverData.find(d => d.driver_number === parseInt(driverNumber, 10));
+        let currentDriver = driverData.find(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
 
         if (!currentDriver) {
           // Fetch from the root drivers endpoint if they aren't in the active session
-          const response = await fetch(`https://api.openf1.org/v1/drivers?driver_number=${driverNumber}`);
+          const response = await fetch(`https://api.openf1.org/v1/drivers`);
           if (response.ok) {
             const list = await response.json();
-            if (list.length > 0) {
-              currentDriver = list[list.length - 1]; // Pick latest session record
+            const matches = list.filter(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
+            if (matches.length > 0) {
+              currentDriver = matches[matches.length - 1]; // Pick latest session record
             }
           }
         }
@@ -79,7 +93,12 @@ export default function DriverProfile() {
           setConstructorTimeline(null);
         }
 
-        const driverId = await jolpicaApi.getDriverId(currentDriver.name_acronym, currentDriver.driver_number);
+        const driverId = await jolpicaApi.getDriverId(
+          currentDriver.first_name,
+          currentDriver.last_name,
+          currentDriver.name_acronym,
+          currentDriver.driver_number
+        );
         
         const [stats, timeline] = await Promise.all([
           jolpicaApi.getCareerStats(driverId),
@@ -103,7 +122,7 @@ export default function DriverProfile() {
       if (bioTimerId) clearTimeout(bioTimerId);
       if (careerTimerId) clearTimeout(careerTimerId);
     };
-  }, [driverNumber]);
+  }, [driverSlug]);
 
   // Fetch OpenF1 season positions when selectedYear changes
   useEffect(() => {
@@ -111,13 +130,40 @@ export default function DriverProfile() {
     let timerId = null;
 
     const fetchSeasonDetails = async () => {
+      if (!driverInfo) return; // Wait until basic driver info is loaded
       if (isMounted) setLoadingSeasonData(true);
       try {
-        const [raceData, qualData, positionData] = await Promise.all([
+        const [raceData, qualData] = await Promise.all([
           f1Api.getSessions(selectedYear, 'Race'),
-          f1Api.getSessions(selectedYear, 'Qualifying'),
-          fetch(`https://api.openf1.org/v1/position?driver_number=${driverNumber}&date>=${selectedYear}-01-01&date<=${selectedYear}-12-31`).then(res => res.json())
+          f1Api.getSessions(selectedYear, 'Qualifying')
         ]);
+
+        let seasonDriverNumber = null;
+        if (raceData && raceData.length > 0) {
+          const firstSessionKey = raceData[0].session_key;
+          // Fetch drivers in that session to resolve the driver's number for that season
+          const res = await fetch(`https://api.openf1.org/v1/drivers?session_key=${firstSessionKey}`);
+          if (res.ok) {
+            const list = await res.json();
+            const match = list.find(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
+            if (match) {
+              seasonDriverNumber = match.driver_number;
+            }
+          }
+        }
+
+        // If the driver did not participate in this season, we set sessions and positions to empty
+        if (!seasonDriverNumber) {
+          if (!isMounted) return;
+          setSessions([]);
+          setQualSessions([]);
+          setPositions([]);
+          setLoadingSeasonData(false);
+          return;
+        }
+
+        // Fetch telemetry positions with the resolved season-specific driver number!
+        const positionData = await fetch(`https://api.openf1.org/v1/position?driver_number=${seasonDriverNumber}&date>=${selectedYear}-01-01&date<=${selectedYear}-12-31`).then(res => res.json());
 
         if (!isMounted) return;
         setSessions(raceData || []);
@@ -137,7 +183,7 @@ export default function DriverProfile() {
       isMounted = false; 
       if (timerId) clearTimeout(timerId);
     };
-  }, [driverNumber, selectedYear]);
+  }, [driverSlug, selectedYear, driverInfo]);
 
   // Processes race & qualifying stats for the selected year
   const seasonStats = useMemo(() => {
@@ -208,7 +254,7 @@ export default function DriverProfile() {
   const scaleY = useTransform(scrollYProgress, [0, 1], [0, 1]);
 
   if (loadingProfile) {
-    return <LoadingState message={`Opening driver profile ${driverNumber}...`} />;
+    return <LoadingState message={`Opening driver profile ${driverSlug}...`} />;
   }
 
   if (error || !driverInfo) {
