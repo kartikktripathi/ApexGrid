@@ -69,33 +69,33 @@ async function fetchJolpica(endpoint) {
     throw new Error(`Jolpica API Error: ${response.status} ${response.statusText}`);
   }
   const data = await response.json();
-  
+
   const ttl = getTtlForEndpoint(endpoint);
   setCache(endpoint, data, ttl);
-  
+
   return data;
 }
 
 async function isSeasonCompleted(season) {
   const currentYear = new Date().getFullYear();
   const seasonYear = parseInt(season, 10);
-  
+
   if (seasonYear < currentYear) {
     return true;
   }
-  
+
   if (seasonYear > currentYear) {
     return false;
   }
-  
+
   try {
     const data = await fetchJolpica(`/${season}.json`);
     const races = data?.MRData?.RaceTable?.Races || [];
     if (races.length === 0) return false;
-    
+
     const lastRace = races[races.length - 1];
     if (!lastRace.date) return false;
-    
+
     const lastRaceDate = new Date(`${lastRace.date}T${lastRace.time || "23:59:59Z"}`);
     return Date.now() > lastRaceDate.getTime();
   } catch (e) {
@@ -105,6 +105,20 @@ async function isSeasonCompleted(season) {
 }
 
 export const jolpicaApi = {
+  /**
+   * Fetches the seasons in which the driver participated
+   */
+  getDriverSeasons: async (driverId) => {
+    try {
+      const data = await fetchJolpica(`/drivers/${driverId}/seasons.json?limit=100`);
+      const seasons = data?.MRData?.SeasonTable?.Seasons || [];
+      return seasons.map(s => parseInt(s.season, 10)).sort((a, b) => b - a);
+    } catch (e) {
+      console.error(`Failed to fetch seasons for driver ${driverId}`, e);
+      throw e;
+    }
+  },
+
   /**
    * Resolves an OpenF1 driver number or code to a Jolpica driver ID dynamically
    */
@@ -200,7 +214,7 @@ export const jolpicaApi = {
               const pos = standing.position;
               const pts = parseFloat(standing.points || 0);
               const season = list[0].season;
-              
+
               const completed = await isSeasonCompleted(s.season);
               if (completed) {
                 if (pos === "1") {
@@ -216,7 +230,7 @@ export const jolpicaApi = {
           await delay(150);
         } catch (err) {
           console.error(`Failed to fetch standings for season ${s.season}`, err);
-          
+
           // If it's a 404 and it's the current year or future, it's safe to skip it (stands for no data yet)
           const is404 = err.message.includes("404");
           const isCurrentOrFuture = parseInt(s.season, 10) >= new Date().getFullYear();
@@ -237,7 +251,7 @@ export const jolpicaApi = {
                   const pos = standing.position;
                   const pts = parseFloat(standing.points || 0);
                   const season = list[0].season;
-                  
+
                   const completed = await isSeasonCompleted(s.season);
                   if (completed) {
                     if (pos === "1") {
@@ -290,9 +304,9 @@ export const jolpicaApi = {
           try {
             const seasonsData = await fetchJolpica(`/drivers/${driverId}/constructors/${con.constructorId}/seasons.json?limit=100`);
             const seasons = seasonsData?.MRData?.SeasonTable?.Seasons || [];
-            
+
             const years = seasons.map(s => parseInt(s.season, 10)).sort((a, b) => a - b);
-            
+
             return {
               id: con.constructorId,
               name: con.name,

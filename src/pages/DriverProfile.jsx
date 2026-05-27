@@ -27,8 +27,8 @@ export default function DriverProfile() {
   const initialDriver = location.state?.driver;
 
   // Seasons list
-  const years = [2026, 2025, 2024, 2023];
-  const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
+  const [availableSeasons, setAvailableSeasons] = useState([]);
+  const [selectedYear, setSelectedYear] = useState(null);
 
   // Loading and Error States
   const [loadingProfile, setLoadingProfile] = useState(() => !initialDriver);
@@ -48,6 +48,19 @@ export default function DriverProfile() {
 
   // Fetch static/career data once per driverSlug
   useEffect(() => {
+    // Reset all states for new driver slug to avoid UI bleed/previous driver data showing
+    setDriverInfo(initialDriver || null);
+    setLoadingProfile(!initialDriver);
+    setError(null);
+    setAvailableSeasons([]);
+    setSelectedYear(null);
+    setCareerStats(null);
+    setConstructorTimeline(null);
+    setSessions([]);
+    setQualSessions([]);
+    setPositions([]);
+    setLoadingSeasonData(true);
+
     let isMounted = true;
     let bioTimerId = null;
     let careerTimerId = null;
@@ -102,7 +115,26 @@ export default function DriverProfile() {
           currentDriver.name_acronym,
           currentDriver.driver_number
         );
-        
+
+        jolpicaApi.getDriverSeasons(driverId)
+          .then((allSeasons) => {
+            if (!isMounted) return;
+            const supported = allSeasons.filter(y => [2026, 2025, 2024, 2023].includes(y));
+            if (supported.length > 0) {
+              setAvailableSeasons(supported);
+              setSelectedYear(supported[0]);
+            } else {
+              setAvailableSeasons([2026, 2025, 2024, 2023]);
+              setSelectedYear(2026);
+            }
+          })
+          .catch((err) => {
+            console.error("Failed to load driver seasons", err);
+            if (!isMounted) return;
+            setAvailableSeasons([2026, 2025, 2024, 2023]);
+            setSelectedYear(2026);
+          });
+
         const [stats, timeline] = await Promise.all([
           jolpicaApi.getCareerStats(driverId),
           jolpicaApi.getConstructorTimeline(driverId)
@@ -120,8 +152,8 @@ export default function DriverProfile() {
     };
 
     loadDriverBio();
-    return () => { 
-      isMounted = false; 
+    return () => {
+      isMounted = false;
       if (bioTimerId) clearTimeout(bioTimerId);
       if (careerTimerId) clearTimeout(careerTimerId);
     };
@@ -133,7 +165,7 @@ export default function DriverProfile() {
     let timerId = null;
 
     const fetchSeasonDetails = async () => {
-      if (!currentDriverInfo) return; // Wait until basic driver info is loaded
+      if (!currentDriverInfo || !selectedYear) return; // Wait until basic driver info and selectedYear are loaded
       if (isMounted) setLoadingSeasonData(true);
       try {
         const [raceData, qualData] = await Promise.all([
@@ -147,7 +179,7 @@ export default function DriverProfile() {
         if (raceData && raceData.length > 0) {
           // Sort race sessions chronologically (ascending)
           const sortedRaces = [...raceData].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
-          
+
           // Find the first chronological session that has driver records populated
           for (const race of sortedRaces) {
             try {
@@ -214,8 +246,8 @@ export default function DriverProfile() {
     };
 
     fetchSeasonDetails();
-    return () => { 
-      isMounted = false; 
+    return () => {
+      isMounted = false;
       if (timerId) clearTimeout(timerId);
     };
   }, [driverSlug, selectedYear, currentDriverInfo]);
@@ -249,9 +281,9 @@ export default function DriverProfile() {
       // Aggregates
       if (qualPos === 1) totalPoles++;
       if (finishPos === 1) totalWins++;
-      
-      const pointsScored = raceResult 
-        ? (typeof raceResult.points === 'number' ? raceResult.points : (POINTS_MAP[finishPos] || 0)) 
+
+      const pointsScored = raceResult
+        ? (typeof raceResult.points === 'number' ? raceResult.points : (POINTS_MAP[finishPos] || 0))
         : 0;
       totalPoints += pointsScored;
 
@@ -321,12 +353,12 @@ export default function DriverProfile() {
 
   return (
     <div style={{ background: 'var(--color-bg-base)', minHeight: '100vh', paddingBottom: '10vw' }}>
-      
+
       {/* 1. HERO HEADER */}
-      <section style={{ 
-        position: 'relative', 
-        padding: '12vw 5vw 6vw 5vw', 
-        overflow: 'hidden', 
+      <section style={{
+        position: 'relative',
+        padding: '12vw 5vw 6vw 5vw',
+        overflow: 'hidden',
         borderBottom: '1px solid var(--color-border)',
         background: 'radial-gradient(circle at 10% 20%, rgba(20,20,20,0.8) 0%, var(--color-bg-base) 90%)'
       }}>
@@ -337,9 +369,9 @@ export default function DriverProfile() {
         }} />
 
         {/* Back Button */}
-        <button 
-          onClick={() => navigate('/drivers')} 
-          style={{ 
+        <button
+          onClick={() => navigate('/drivers')}
+          style={{
             position: 'absolute', top: '8vw', left: '5vw', zIndex: 30,
             display: 'flex', alignItems: 'center', gap: '0.5rem',
             color: 'var(--color-text-secondary)', fontSize: '0.9rem',
@@ -361,11 +393,11 @@ export default function DriverProfile() {
         </div>
 
         <div style={{ position: 'relative', zIndex: 10, display: 'flex', gap: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-          
+
           {/* Team accent vertical bar (replacing the photo) */}
-          <div style={{ 
-            width: '8px', 
-            height: '140px', 
+          <div style={{
+            width: '8px',
+            height: '140px',
             borderRadius: 'var(--radius-sm)',
             background: `linear-gradient(to bottom, ${teamColor}, ${teamColor}44)`,
             boxShadow: `0 0 30px ${teamColor}66`,
@@ -375,10 +407,10 @@ export default function DriverProfile() {
           {/* Driver Title Details */}
           <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minWidth: '300px' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{ 
-                fontFamily: 'var(--font-heading)', 
-                fontSize: '1.2rem', 
-                fontWeight: 600, 
+              <span style={{
+                fontFamily: 'var(--font-heading)',
+                fontSize: '1.2rem',
+                fontWeight: 600,
                 color: teamColor,
                 letterSpacing: '0.15em',
                 textTransform: 'uppercase'
@@ -386,9 +418,9 @@ export default function DriverProfile() {
                 {currentDriverInfo.team_name}
               </span>
               <div style={{ width: '40px', height: '1px', background: 'var(--color-border)' }} />
-              <span style={{ 
-                fontFamily: 'var(--font-heading)', 
-                fontSize: '1.2rem', 
+              <span style={{
+                fontFamily: 'var(--font-heading)',
+                fontSize: '1.2rem',
                 color: 'var(--color-text-muted)',
                 letterSpacing: '0.1em'
               }}>
@@ -403,10 +435,10 @@ export default function DriverProfile() {
 
             {currentDriverInfo.country_code && (
               <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.5rem' }}>
-                <span style={{ 
-                  background: 'var(--color-bg-elevated)', 
-                  border: '1px solid var(--color-border)', 
-                  padding: '0.4rem 0.8rem', 
+                <span style={{
+                  background: 'var(--color-bg-elevated)',
+                  border: '1px solid var(--color-border)',
+                  padding: '0.4rem 0.8rem',
                   borderRadius: 'var(--radius-sm)',
                   fontSize: '0.8rem',
                   fontWeight: 600,
@@ -425,7 +457,7 @@ export default function DriverProfile() {
 
       {/* 2. CURRENT SEASON WRAPPER */}
       <section style={{ padding: '6vw 5vw' }}>
-        
+
         {/* Section Header with drop-down */}
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem', marginBottom: '4rem' }}>
           <div>
@@ -437,11 +469,15 @@ export default function DriverProfile() {
             </h2>
           </div>
 
-          <CustomDropdown 
-            value={selectedYear}
-            onChange={(val) => setSelectedYear(val)}
-            options={years.map(y => ({ value: y, label: `${y} SEASON` }))}
-          />
+          {availableSeasons.length > 0 && selectedYear ? (
+            <CustomDropdown
+              value={selectedYear}
+              onChange={(val) => setSelectedYear(val)}
+              options={availableSeasons.map(y => ({ value: y, label: `${y} SEASON` }))}
+            />
+          ) : (
+            <div className="skeleton-pulse" style={{ width: '160px', height: '42px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
+          )}
         </div>
 
         {/* Season Statistics Grid */}
@@ -451,7 +487,7 @@ export default function DriverProfile() {
             { label: 'Wins', value: seasonStats.totalWins, desc: 'Race victories' },
             { label: 'Points Scored', value: seasonStats.totalPoints, desc: 'Estimated season points' }
           ].map((stat, i) => (
-            <motion.div 
+            <motion.div
               key={stat.label}
               initial={{ opacity: 0, y: 20 }}
               whileInView={{ opacity: 1, y: 0 }}
@@ -465,15 +501,15 @@ export default function DriverProfile() {
                 {stat.label}
               </span>
               {loadingSeasonData ? (
-                <div 
-                  className="skeleton-pulse" 
-                  style={{ 
-                    height: '3rem', 
-                    width: '80px', 
-                    background: 'rgba(255,255,255,0.05)', 
+                <div
+                  className="skeleton-pulse"
+                  style={{
+                    height: '3rem',
+                    width: '80px',
+                    background: 'rgba(255,255,255,0.05)',
                     borderRadius: 'var(--radius-sm)',
                     margin: '0.5rem 0'
-                  }} 
+                  }}
                 />
               ) : (
                 <span style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff', lineHeight: 1, margin: '0.5rem 0' }}>
@@ -489,15 +525,15 @@ export default function DriverProfile() {
 
         {/* 3. LINEAR POSITION GRAPH */}
         {loadingSeasonData ? (
-          <div 
-            className="glass-panel skeleton-pulse" 
-            style={{ 
-              height: `${chartHeight}px`, 
-              background: 'var(--color-bg-panel)', 
-              borderRadius: 'var(--radius-lg)', 
-              display: 'flex', 
-              alignItems: 'center', 
-              justify: 'center' 
+          <div
+            className="glass-panel skeleton-pulse"
+            style={{
+              height: `${chartHeight}px`,
+              background: 'var(--color-bg-panel)',
+              borderRadius: 'var(--radius-lg)',
+              display: 'flex',
+              alignItems: 'center',
+              justify: 'center'
             }}
           >
             <p style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-heading)', fontSize: '1.1rem', letterSpacing: '0.1em' }}>
@@ -509,7 +545,7 @@ export default function DriverProfile() {
             <p className="text-muted" style={{ fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>No telemetry position data available for {selectedYear}.</p>
           </div>
         ) : (
-          <motion.div 
+          <motion.div
             initial={{ opacity: 0, y: 30 }}
             whileInView={{ opacity: 1, y: 0 }}
             viewport={{ once: true }}
@@ -568,19 +604,19 @@ export default function DriverProfile() {
                     const y = yPosScale(pos);
                     return (
                       <g key={pos}>
-                        <line 
-                          x1={paddingLeft} 
-                          y1={y} 
-                          x2={chartWidth - paddingRight} 
-                          y2={y} 
-                          stroke="rgba(255,255,255,0.04)" 
+                        <line
+                          x1={paddingLeft}
+                          y1={y}
+                          x2={chartWidth - paddingRight}
+                          y2={y}
+                          stroke="rgba(255,255,255,0.04)"
                           strokeWidth="1"
                         />
-                        <text 
-                          x={paddingLeft - 15} 
-                          y={y + 5} 
-                          fill="var(--color-text-muted)" 
-                          fontSize="11" 
+                        <text
+                          x={paddingLeft - 15}
+                          y={y + 5}
+                          fill="var(--color-text-muted)"
+                          fontSize="11"
                           textAnchor="end"
                           fontFamily="var(--font-heading)"
                         >
@@ -595,20 +631,20 @@ export default function DriverProfile() {
                     const x = xRoundScale(idx, seasonStats.races.length);
                     return (
                       <g key={race.round}>
-                        <line 
-                          x1={x} 
-                          y1={paddingTop} 
-                          x2={x} 
-                          y2={chartHeight - paddingBottom} 
-                          stroke={hoveredRoundIdx === idx ? "rgba(255,255,255,0.06)" : "transparent"} 
+                        <line
+                          x1={x}
+                          y1={paddingTop}
+                          x2={x}
+                          y2={chartHeight - paddingBottom}
+                          stroke={hoveredRoundIdx === idx ? "rgba(255,255,255,0.06)" : "transparent"}
                           strokeWidth={hoveredRoundIdx === idx ? "24" : "1"}
                           strokeLinecap="round"
                         />
-                        <text 
-                          x={x} 
-                          y={chartHeight - paddingBottom + 25} 
+                        <text
+                          x={x}
+                          y={chartHeight - paddingBottom + 25}
                           fill={hoveredRoundIdx === idx ? "var(--color-accent-primary)" : "var(--color-text-muted)"}
-                          fontSize="11" 
+                          fontSize="11"
                           textAnchor="middle"
                           fontFamily="var(--font-heading)"
                           fontWeight={hoveredRoundIdx === idx ? 600 : 400}
@@ -630,12 +666,12 @@ export default function DriverProfile() {
                       })
                       .filter(Boolean)
                       .join(' ');
-                    
+
                     return points ? (
-                      <polyline 
-                        fill="none" 
-                        stroke="rgba(255,255,255,0.22)" 
-                        strokeWidth="2" 
+                      <polyline
+                        fill="none"
+                        stroke="rgba(255,255,255,0.22)"
+                        strokeWidth="2"
                         strokeDasharray="6,5"
                         points={points}
                       />
@@ -653,12 +689,12 @@ export default function DriverProfile() {
                       })
                       .filter(Boolean)
                       .join(' ');
-                    
+
                     return points ? (
-                      <polyline 
-                        fill="none" 
-                        stroke="url(#lineGrad)" 
-                        strokeWidth="3.5" 
+                      <polyline
+                        fill="none"
+                        stroke="url(#lineGrad)"
+                        strokeWidth="3.5"
                         points={points}
                         filter="url(#shadowGlow)"
                       />
@@ -676,12 +712,12 @@ export default function DriverProfile() {
                       <g key={idx}>
                         {/* Qual Dot */}
                         {yQual && (
-                          <circle 
-                            cx={x} 
-                            cy={yQual} 
-                            r={isHovered ? "5" : "3.5"} 
-                            fill="var(--color-bg-base)" 
-                            stroke="rgba(255,255,255,0.4)" 
+                          <circle
+                            cx={x}
+                            cy={yQual}
+                            r={isHovered ? "5" : "3.5"}
+                            fill="var(--color-bg-base)"
+                            stroke="rgba(255,255,255,0.4)"
                             strokeWidth="1.5"
                             style={{ transition: 'all 0.2s' }}
                           />
@@ -690,20 +726,20 @@ export default function DriverProfile() {
                         {yFinish && (
                           <g>
                             {isHovered && (
-                              <circle 
-                                cx={x} 
-                                cy={yFinish} 
-                                r="9" 
-                                fill={teamColor} 
+                              <circle
+                                cx={x}
+                                cy={yFinish}
+                                r="9"
+                                fill={teamColor}
                                 opacity="0.3"
                               />
                             )}
-                            <circle 
-                              cx={x} 
-                              cy={yFinish} 
-                              r={isHovered ? "6" : "4.5"} 
-                              fill={teamColor} 
-                              stroke="#ffffff" 
+                            <circle
+                              cx={x}
+                              cy={yFinish}
+                              r={isHovered ? "6" : "4.5"}
+                              fill={teamColor}
+                              stroke="#ffffff"
                               strokeWidth="1.5"
                               style={{ transition: 'all 0.2s' }}
                             />
@@ -752,7 +788,7 @@ export default function DriverProfile() {
                     <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: '0 0 1rem 0' }}>
                       {seasonStats.races[hoveredRoundIdx].country}
                     </p>
-                    
+
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.8rem' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
                         <span style={{ color: 'var(--color-text-secondary)' }}>Qualifying:</span>
@@ -776,13 +812,13 @@ export default function DriverProfile() {
       </section>
 
       {/* 4. CAREER SCROLL SECTION */}
-      <section ref={timelineRef} style={{ 
-        padding: '8vw 5vw', 
-        borderTop: '1px solid var(--color-border)', 
+      <section ref={timelineRef} style={{
+        padding: '8vw 5vw',
+        borderTop: '1px solid var(--color-border)',
         background: 'linear-gradient(to bottom, var(--color-bg-base), #000 70%)'
       }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '4rem' }}>
-          
+
           {/* Left Timeline (F1 Teams Driven For) */}
           <div style={{ flex: '1 1 350px', position: 'relative', paddingLeft: '4rem' }}>
             <span style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-accent-primary)', fontSize: '0.9rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
@@ -806,21 +842,21 @@ export default function DriverProfile() {
               <p style={{ color: 'var(--color-text-muted)' }}>No historical timeline team details available.</p>
             ) : (
               <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>
-                
+
                 {/* Connecting Scroll Line */}
-                <div style={{ 
-                  position: 'absolute', left: '-2.5rem', top: '10px', bottom: '10px', width: '2px', 
-                  background: 'rgba(255,255,255,0.06)' 
+                <div style={{
+                  position: 'absolute', left: '-2.5rem', top: '10px', bottom: '10px', width: '2px',
+                  background: 'rgba(255,255,255,0.06)'
                 }} />
-                
-                <motion.div style={{ 
-                  position: 'absolute', left: '-2.5rem', top: '10px', bottom: '10px', width: '2px', 
-                  background: 'linear-gradient(to bottom, var(--color-accent-primary), var(--color-accent-secondary))', 
-                  scaleY, transformOrigin: 'top' 
+
+                <motion.div style={{
+                  position: 'absolute', left: '-2.5rem', top: '10px', bottom: '10px', width: '2px',
+                  background: 'linear-gradient(to bottom, var(--color-accent-primary), var(--color-accent-secondary))',
+                  scaleY, transformOrigin: 'top'
                 }} />
 
                 {constructorTimeline.map((item, idx) => (
-                  <motion.div 
+                  <motion.div
                     key={item.id}
                     initial={{ opacity: 0, x: -20 }}
                     whileInView={{ opacity: 1, x: 0 }}
@@ -829,25 +865,25 @@ export default function DriverProfile() {
                     style={{ position: 'relative' }}
                   >
                     {/* Ring dot on line */}
-                    <div style={{ 
-                      position: 'absolute', left: '-3rem', top: '6px', 
-                      width: '18px', height: '18px', borderRadius: '50%', 
+                    <div style={{
+                      position: 'absolute', left: '-3rem', top: '6px',
+                      width: '18px', height: '18px', borderRadius: '50%',
                       background: 'var(--color-bg-base)', border: `2px solid ${idx === constructorTimeline.length - 1 ? 'var(--color-accent-primary)' : 'rgba(255,255,255,0.2)'}`,
                       display: 'flex', alignItems: 'center', justifyContent: 'center',
                       zIndex: 5
                     }}>
-                      <div style={{ 
-                        width: '6px', height: '6px', borderRadius: '50%', 
-                        background: idx === constructorTimeline.length - 1 ? 'var(--color-accent-primary)' : 'rgba(255,255,255,0.2)' 
+                      <div style={{
+                        width: '6px', height: '6px', borderRadius: '50%',
+                        background: idx === constructorTimeline.length - 1 ? 'var(--color-accent-primary)' : 'rgba(255,255,255,0.2)'
                       }} />
                     </div>
 
                     {/* Team Details */}
                     <div>
-                      <span style={{ 
-                        fontSize: '0.8rem', 
-                        fontFamily: 'var(--font-heading)', 
-                        fontWeight: 600, 
+                      <span style={{
+                        fontSize: '0.8rem',
+                        fontFamily: 'var(--font-heading)',
+                        fontWeight: 600,
                         color: idx === constructorTimeline.length - 1 ? 'var(--color-accent-primary)' : 'var(--color-text-muted)',
                         letterSpacing: '0.1em'
                       }}>
@@ -868,7 +904,7 @@ export default function DriverProfile() {
 
           {/* Right Column (Career F1 Summary) */}
           <div style={{ flex: '1 1 350px', background: 'var(--color-bg-panel)', padding: '3.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', position: 'relative' }}>
-            
+
             <div style={{
               position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
               background: `linear-gradient(to right, ${teamColor}, transparent)`
@@ -895,14 +931,14 @@ export default function DriverProfile() {
                     <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '0.6rem', fontWeight: 600 }}>
                       {stat.label}
                     </span>
-                    <div 
-                      className="skeleton-pulse" 
-                      style={{ 
-                        height: stat.size === 'huge' ? '3.5rem' : '2.5rem', 
-                        width: stat.size === 'huge' ? '70%' : '50%', 
-                        background: 'rgba(255,255,255,0.05)', 
-                        borderRadius: 'var(--radius-sm)' 
-                      }} 
+                    <div
+                      className="skeleton-pulse"
+                      style={{
+                        height: stat.size === 'huge' ? '3.5rem' : '2.5rem',
+                        width: stat.size === 'huge' ? '70%' : '50%',
+                        background: 'rgba(255,255,255,0.05)',
+                        borderRadius: 'var(--radius-sm)'
+                      }}
                     />
                   </div>
                 ))}
@@ -921,12 +957,12 @@ export default function DriverProfile() {
                     <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
                       {stat.label}
                     </span>
-                    <span style={{ 
-                      fontSize: (idx === 0 || idx === 5) ? '4rem' : '2.8rem', 
-                      fontFamily: 'var(--font-heading)', 
-                      fontWeight: 800, 
-                      color: stat.color, 
-                      lineHeight: 0.9 
+                    <span style={{
+                      fontSize: (idx === 0 || idx === 5) ? '4rem' : '2.8rem',
+                      fontFamily: 'var(--font-heading)',
+                      fontWeight: 800,
+                      color: stat.color,
+                      lineHeight: 0.9
                     }}>
                       {stat.value}
                     </span>
