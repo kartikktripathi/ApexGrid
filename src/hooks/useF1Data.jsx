@@ -1,5 +1,5 @@
-import { useState, useEffect, useCallback } from 'react';
-import { f1Api } from '../utils/api';
+import { useState, useEffect, useCallback } from "react";
+import { f1Api } from "../utils/api";
 
 export function useF1Fetch(fetchFn, dependencies = []) {
   const [data, setData] = useState(null);
@@ -33,22 +33,25 @@ export function useF1Fetch(fetchFn, dependencies = []) {
       isMounted = false;
       if (timerId) clearTimeout(timerId);
     };
-  // eslint-disable-next-line react-hooks/exhaustive-deps
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, dependencies);
 
   return { data, loading, error: null, refetch: () => {} };
 }
 
 // Specific hooks
-export function useDrivers(sessionKey = 'latest') {
+export function useDrivers(sessionKey = "latest") {
   return useF1Fetch(() => f1Api.getDrivers(sessionKey), [sessionKey]);
 }
 
-export function useChampionshipDrivers(sessionKey = 'latest') {
-  return useF1Fetch(() => f1Api.getChampionshipDrivers(sessionKey), [sessionKey]);
+export function useChampionshipDrivers(sessionKey = "latest") {
+  return useF1Fetch(
+    () => f1Api.getChampionshipDrivers(sessionKey),
+    [sessionKey],
+  );
 }
 
-export function useChampionshipTeams(sessionKey = 'latest') {
+export function useChampionshipTeams(sessionKey = "latest") {
   return useF1Fetch(() => f1Api.getChampionshipTeams(sessionKey), [sessionKey]);
 }
 

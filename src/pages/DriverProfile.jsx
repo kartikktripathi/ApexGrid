@@ -1,23 +1,23 @@
-import React, { useState, useEffect, useMemo, useRef } from 'react';
-import { useParams, useNavigate, useLocation } from 'react-router-dom';
-import { motion, useScroll, useTransform } from 'framer-motion';
-import { f1Api } from '../utils/api';
-import { jolpicaApi } from '../utils/jolpicaApi';
-import LoadingState from '../components/ui/LoadingState';
-import ErrorState from '../components/ui/ErrorState';
-import CustomDropdown from '../components/ui/CustomDropdown';
+import React, { useState, useEffect, useMemo, useRef } from "react";
+import { useParams, useNavigate, useLocation } from "react-router-dom";
+import { motion, useScroll, useTransform } from "framer-motion";
+import { f1Api } from "../utils/api";
+import { jolpicaApi } from "../utils/jolpicaApi";
+import LoadingState from "../components/ui/LoadingState";
+import ErrorState from "../components/ui/ErrorState";
+import CustomDropdown from "../components/ui/CustomDropdown";
 
 const getDriverSlug = (first, last, fullName) => {
-  const f = first || '';
-  const l = last || '';
-  const name = l ? `${f}_${l}` : (fullName || '');
+  const f = first || "";
+  const l = last || "";
+  const name = l ? `${f}_${l}` : fullName || "";
   return name
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[^a-z0-9_]/g, '_')
-    .replace(/_+/g, '_')
-    .replace(/^_+|_+$/g, '');
+    .replace(/[^a-z0-9_]/g, "_")
+    .replace(/_+/g, "_")
+    .replace(/^_+|_+$/g, "");
 };
 
 export default function DriverProfile() {
@@ -69,15 +69,23 @@ export default function DriverProfile() {
       try {
         // 1. Get driver details from OpenF1
         // Try latest session first, fallback to all drivers search
-        let driverData = await f1Api.getDrivers('latest');
-        let currentDriver = driverData.find(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
+        let driverData = await f1Api.getDrivers("latest");
+        let currentDriver = driverData.find(
+          (d) =>
+            getDriverSlug(d.first_name, d.last_name, d.full_name) ===
+            driverSlug,
+        );
 
         if (!currentDriver) {
           // Fetch from the root drivers endpoint if they aren't in the active session
           const response = await fetch(`https://api.openf1.org/v1/drivers`);
           if (response.ok) {
             const list = await response.json();
-            const matches = list.filter(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
+            const matches = list.filter(
+              (d) =>
+                getDriverSlug(d.first_name, d.last_name, d.full_name) ===
+                driverSlug,
+            );
             if (matches.length > 0) {
               currentDriver = matches[matches.length - 1]; // Pick latest session record
             }
@@ -113,13 +121,16 @@ export default function DriverProfile() {
           currentDriver.first_name,
           currentDriver.last_name,
           currentDriver.name_acronym,
-          currentDriver.driver_number
+          currentDriver.driver_number,
         );
 
-        jolpicaApi.getDriverSeasons(driverId)
+        jolpicaApi
+          .getDriverSeasons(driverId)
           .then((allSeasons) => {
             if (!isMounted) return;
-            const supported = allSeasons.filter(y => [2026, 2025, 2024, 2023].includes(y));
+            const supported = allSeasons.filter((y) =>
+              [2026, 2025, 2024, 2023].includes(y),
+            );
             if (supported.length > 0) {
               setAvailableSeasons(supported);
               setSelectedYear(supported[0]);
@@ -137,7 +148,7 @@ export default function DriverProfile() {
 
         const [stats, timeline] = await Promise.all([
           jolpicaApi.getCareerStats(driverId),
-          jolpicaApi.getConstructorTimeline(driverId)
+          jolpicaApi.getConstructorTimeline(driverId),
         ]);
 
         if (!isMounted) return;
@@ -146,7 +157,10 @@ export default function DriverProfile() {
       } catch (err) {
         console.error("Failed to load career/timeline stats", err);
         if (isMounted) {
-          careerTimerId = setTimeout(() => loadCareerAndTimeline(currentDriver), 10000);
+          careerTimerId = setTimeout(
+            () => loadCareerAndTimeline(currentDriver),
+            10000,
+          );
         }
       }
     };
@@ -169,8 +183,8 @@ export default function DriverProfile() {
       if (isMounted) setLoadingSeasonData(true);
       try {
         const [raceData, qualData] = await Promise.all([
-          f1Api.getSessions(selectedYear, 'Race'),
-          f1Api.getSessions(selectedYear, 'Qualifying')
+          f1Api.getSessions(selectedYear, "Race"),
+          f1Api.getSessions(selectedYear, "Qualifying"),
         ]);
 
         let seasonDriverNumber = null;
@@ -178,12 +192,16 @@ export default function DriverProfile() {
 
         if (raceData && raceData.length > 0) {
           // Sort race sessions chronologically (ascending)
-          const sortedRaces = [...raceData].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+          const sortedRaces = [...raceData].sort(
+            (a, b) => new Date(a.date_start) - new Date(b.date_start),
+          );
 
           // Find the first chronological session that has driver records populated
           for (const race of sortedRaces) {
             try {
-              const res = await fetch(`https://api.openf1.org/v1/drivers?session_key=${race.session_key}`);
+              const res = await fetch(
+                `https://api.openf1.org/v1/drivers?session_key=${race.session_key}`,
+              );
               if (!res.ok) {
                 throw new Error(`OpenF1 Driver API error: ${res.status}`);
               }
@@ -191,14 +209,21 @@ export default function DriverProfile() {
               successfulFetches++;
 
               if (list && list.length > 0) {
-                const match = list.find(d => getDriverSlug(d.first_name, d.last_name, d.full_name) === driverSlug);
+                const match = list.find(
+                  (d) =>
+                    getDriverSlug(d.first_name, d.last_name, d.full_name) ===
+                    driverSlug,
+                );
                 if (match) {
                   seasonDriverNumber = match.driver_number;
                   break; // Found their number! Exit chronological search
                 }
               }
             } catch (err) {
-              console.warn(`Could not resolve driver number in session ${race.session_key}`, err);
+              console.warn(
+                `Could not resolve driver number in session ${race.session_key}`,
+                err,
+              );
             }
           }
         }
@@ -220,16 +245,25 @@ export default function DriverProfile() {
         }
 
         // Fetch standings with the resolved season-specific driver number!
-        const res = await fetch(`https://api.openf1.org/v1/session_result?driver_number=${seasonDriverNumber}`);
+        const res = await fetch(
+          `https://api.openf1.org/v1/session_result?driver_number=${seasonDriverNumber}`,
+        );
         if (!res.ok) {
           throw new Error(`OpenF1 session_result API error: ${res.status}`);
         }
         const positionData = await res.json();
 
         // Validate that we got results if there are past races
-        const hasPastRaces = raceData && raceData.some(race => new Date(race.date_start) < new Date());
-        if (hasPastRaces && (!Array.isArray(positionData) || positionData.length === 0)) {
-          throw new Error("No session results returned by OpenF1 API, even though past races exist.");
+        const hasPastRaces =
+          raceData &&
+          raceData.some((race) => new Date(race.date_start) < new Date());
+        if (
+          hasPastRaces &&
+          (!Array.isArray(positionData) || positionData.length === 0)
+        ) {
+          throw new Error(
+            "No session results returned by OpenF1 API, even though past races exist.",
+          );
         }
 
         if (!isMounted) return;
@@ -258,24 +292,41 @@ export default function DriverProfile() {
       return { races: [], totalPoles: 0, totalWins: 0, totalPoints: 0 };
     }
 
-    const POINTS_MAP = { 1: 25, 2: 18, 3: 15, 4: 12, 5: 10, 6: 8, 7: 6, 8: 4, 9: 2, 10: 1 };
+    const POINTS_MAP = {
+      1: 25,
+      2: 18,
+      3: 15,
+      4: 12,
+      5: 10,
+      6: 8,
+      7: 6,
+      8: 4,
+      9: 2,
+      10: 1,
+    };
     let totalPoles = 0;
     let totalWins = 0;
     let totalPoints = 0;
 
     // Filter and sort race sessions chronologically
     const sortedRaces = [...sessions]
-      .filter(s => s.year === selectedYear)
+      .filter((s) => s.year === selectedYear)
       .sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
 
     const processedRaces = sortedRaces.map((race, idx) => {
       // 1. Race positions
-      const raceResult = positions.find(p => p.session_key === race.session_key);
+      const raceResult = positions.find(
+        (p) => p.session_key === race.session_key,
+      );
       const finishPos = raceResult ? raceResult.position : null;
 
       // 2. Qualifying session matching
-      const qualSession = qualSessions.find(q => q.meeting_key === race.meeting_key);
-      const qualResult = qualSession ? positions.find(p => p.session_key === qualSession.session_key) : null;
+      const qualSession = qualSessions.find(
+        (q) => q.meeting_key === race.meeting_key,
+      );
+      const qualResult = qualSession
+        ? positions.find((p) => p.session_key === qualSession.session_key)
+        : null;
       const qualPos = qualResult ? qualResult.position : null;
 
       // Aggregates
@@ -283,7 +334,9 @@ export default function DriverProfile() {
       if (finishPos === 1) totalWins++;
 
       const pointsScored = raceResult
-        ? (typeof raceResult.points === 'number' ? raceResult.points : (POINTS_MAP[finishPos] || 0))
+        ? typeof raceResult.points === "number"
+          ? raceResult.points
+          : POINTS_MAP[finishPos] || 0
         : 0;
       totalPoints += pointsScored;
 
@@ -296,7 +349,7 @@ export default function DriverProfile() {
         qualifyingPosition: qualPos,
         isPole: qualPos === 1,
         isWin: finishPos === 1,
-        points: pointsScored
+        points: pointsScored,
       };
     });
 
@@ -304,7 +357,7 @@ export default function DriverProfile() {
       races: processedRaces,
       totalPoles,
       totalWins,
-      totalPoints
+      totalPoints,
     };
   }, [sessions, qualSessions, positions, selectedYear]);
 
@@ -315,7 +368,7 @@ export default function DriverProfile() {
   const timelineRef = useRef(null);
   const { scrollYProgress } = useScroll({
     target: timelineRef,
-    offset: ["start center", "end center"]
+    offset: ["start center", "end center"],
   });
   const scaleY = useTransform(scrollYProgress, [0, 0.7], [0, 1]);
 
@@ -324,11 +377,20 @@ export default function DriverProfile() {
   }
 
   if (error || (!currentDriverInfo && !loadingProfile)) {
-    return <ErrorState message={error || "Driver profile not found."} onRetry={() => navigate('/drivers')} />;
+    return (
+      <ErrorState
+        message={error || "Driver profile not found."}
+        onRetry={() => navigate("/drivers")}
+      />
+    );
   }
 
-  const teamColor = currentDriverInfo.team_colour ? `#${currentDriverInfo.team_colour}` : "#e10600";
-  const driverFullName = currentDriverInfo.full_name || `${currentDriverInfo.first_name || ''} ${currentDriverInfo.last_name || ''}`.trim();
+  const teamColor = currentDriverInfo.team_colour
+    ? `#${currentDriverInfo.team_colour}`
+    : "#e10600";
+  const driverFullName =
+    currentDriverInfo.full_name ||
+    `${currentDriverInfo.first_name || ""} ${currentDriverInfo.last_name || ""}`.trim();
 
   // Rendering parameters for custom SVG graph
   const paddingLeft = 60;
@@ -346,36 +408,63 @@ export default function DriverProfile() {
   };
 
   const xRoundScale = (idx, total) => {
-    if (total <= 1) return paddingLeft + (chartWidth - paddingLeft - paddingRight) / 2;
+    if (total <= 1)
+      return paddingLeft + (chartWidth - paddingLeft - paddingRight) / 2;
     const availableWidth = chartWidth - paddingLeft - paddingRight;
     return paddingLeft + (idx / (total - 1)) * availableWidth;
   };
 
   return (
-    <div style={{ background: 'var(--color-bg-base)', minHeight: '100vh', paddingBottom: '10vw' }}>
-
+    <div
+      style={{
+        background: "var(--color-bg-base)",
+        minHeight: "100vh",
+        paddingBottom: "10vw",
+      }}
+    >
       {/* 1. HERO HEADER */}
-      <section style={{
-        position: 'relative',
-        padding: '12vw 5vw 6vw 5vw',
-        overflow: 'hidden',
-        borderBottom: '1px solid var(--color-border)',
-        background: 'radial-gradient(circle at 10% 20%, rgba(20,20,20,0.8) 0%, var(--color-bg-base) 90%)'
-      }}>
+      <section
+        style={{
+          position: "relative",
+          padding: "12vw 5vw 6vw 5vw",
+          overflow: "hidden",
+          borderBottom: "1px solid var(--color-border)",
+          background:
+            "radial-gradient(circle at 10% 20%, rgba(20,20,20,0.8) 0%, var(--color-bg-base) 90%)",
+        }}
+      >
         {/* Ambient Glow */}
-        <div style={{
-          position: 'absolute', top: '10%', right: '10%', width: '400px', height: '400px',
-          background: teamColor, filter: 'blur(160px)', opacity: 0.15, zIndex: 0, pointerEvents: 'none'
-        }} />
+        <div
+          style={{
+            position: "absolute",
+            top: "10%",
+            right: "10%",
+            width: "400px",
+            height: "400px",
+            background: teamColor,
+            filter: "blur(160px)",
+            opacity: 0.15,
+            zIndex: 0,
+            pointerEvents: "none",
+          }}
+        />
 
         {/* Back Button */}
         <button
-          onClick={() => navigate('/drivers')}
+          onClick={() => navigate("/drivers")}
           style={{
-            position: 'absolute', top: '8vw', left: '5vw', zIndex: 30,
-            display: 'flex', alignItems: 'center', gap: '0.5rem',
-            color: 'var(--color-text-secondary)', fontSize: '0.9rem',
-            letterSpacing: '0.1em', fontWeight: 600, textTransform: 'uppercase'
+            position: "absolute",
+            top: "8vw",
+            left: "5vw",
+            zIndex: 30,
+            display: "flex",
+            alignItems: "center",
+            gap: "0.5rem",
+            color: "var(--color-text-secondary)",
+            fontSize: "0.9rem",
+            letterSpacing: "0.1em",
+            fontWeight: 600,
+            textTransform: "uppercase",
           }}
           className="btn"
         >
@@ -383,72 +472,147 @@ export default function DriverProfile() {
         </button>
 
         {/* Huge Background Number */}
-        <div style={{
-          position: 'absolute', bottom: '-15%', right: '5%',
-          fontSize: 'clamp(10rem, 30vw, 36rem)', fontFamily: 'var(--font-heading)',
-          fontWeight: 900, color: 'rgba(255, 255, 255, 0.02)',
-          zIndex: 1, userSelect: 'none', lineHeight: 0.8
-        }}>
+        <div
+          style={{
+            position: "absolute",
+            bottom: "-15%",
+            right: "5%",
+            fontSize: "clamp(10rem, 30vw, 36rem)",
+            fontFamily: "var(--font-heading)",
+            fontWeight: 900,
+            color: "rgba(255, 255, 255, 0.02)",
+            zIndex: 1,
+            userSelect: "none",
+            lineHeight: 0.8,
+          }}
+        >
           {currentDriverInfo.driver_number}
         </div>
 
-        <div style={{ position: 'relative', zIndex: 10, display: 'flex', gap: '2.5rem', flexWrap: 'wrap', alignItems: 'center' }}>
-
+        <div
+          style={{
+            position: "relative",
+            zIndex: 10,
+            display: "flex",
+            gap: "2.5rem",
+            flexWrap: "wrap",
+            alignItems: "center",
+          }}
+        >
           {/* Team accent vertical bar (replacing the photo) */}
-          <div style={{
-            width: '8px',
-            height: '140px',
-            borderRadius: 'var(--radius-sm)',
-            background: `linear-gradient(to bottom, ${teamColor}, ${teamColor}44)`,
-            boxShadow: `0 0 30px ${teamColor}66`,
-            display: 'block'
-          }} />
+          <div
+            style={{
+              width: "8px",
+              height: "140px",
+              borderRadius: "var(--radius-sm)",
+              background: `linear-gradient(to bottom, ${teamColor}, ${teamColor}44)`,
+              boxShadow: `0 0 30px ${teamColor}66`,
+              display: "block",
+            }}
+          />
 
           {/* Driver Title Details */}
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem', flex: 1, minWidth: '300px' }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
-              <span style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: '1.2rem',
-                fontWeight: 600,
-                color: teamColor,
-                letterSpacing: '0.15em',
-                textTransform: 'uppercase'
-              }}>
+          <div
+            style={{
+              display: "flex",
+              flexDirection: "column",
+              gap: "1rem",
+              flex: 1,
+              minWidth: "300px",
+            }}
+          >
+            <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
+              <span
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "1.2rem",
+                  fontWeight: 600,
+                  color: teamColor,
+                  letterSpacing: "0.15em",
+                  textTransform: "uppercase",
+                }}
+              >
                 {currentDriverInfo.team_name}
               </span>
-              <div style={{ width: '40px', height: '1px', background: 'var(--color-border)' }} />
-              <span style={{
-                fontFamily: 'var(--font-heading)',
-                fontSize: '1.2rem',
-                color: 'var(--color-text-muted)',
-                letterSpacing: '0.1em'
-              }}>
+              <div
+                style={{
+                  width: "40px",
+                  height: "1px",
+                  background: "var(--color-border)",
+                }}
+              />
+              <span
+                style={{
+                  fontFamily: "var(--font-heading)",
+                  fontSize: "1.2rem",
+                  color: "var(--color-text-muted)",
+                  letterSpacing: "0.1em",
+                }}
+              >
                 NO. {currentDriverInfo.driver_number}
               </span>
             </div>
 
-            <h1 style={{ fontSize: 'clamp(3rem, 6vw, 5.5rem)', lineHeight: 0.9, margin: 0, fontFamily: 'var(--font-heading)' }}>
-              {currentDriverInfo.first_name && <span style={{ display: 'block', fontWeight: 300, fontSize: '0.45em', color: 'var(--color-text-secondary)', marginBottom: '0.2rem' }}>{currentDriverInfo.first_name}</span>}
-              <span style={{ fontWeight: 800 }}>{currentDriverInfo.last_name ? currentDriverInfo.last_name : driverFullName}</span>
+            <h1
+              style={{
+                fontSize: "clamp(3rem, 6vw, 5.5rem)",
+                lineHeight: 0.9,
+                margin: 0,
+                fontFamily: "var(--font-heading)",
+              }}
+            >
+              {currentDriverInfo.first_name && (
+                <span
+                  style={{
+                    display: "block",
+                    fontWeight: 300,
+                    fontSize: "0.45em",
+                    color: "var(--color-text-secondary)",
+                    marginBottom: "0.2rem",
+                  }}
+                >
+                  {currentDriverInfo.first_name}
+                </span>
+              )}
+              <span style={{ fontWeight: 800 }}>
+                {currentDriverInfo.last_name
+                  ? currentDriverInfo.last_name
+                  : driverFullName}
+              </span>
             </h1>
 
             {currentDriverInfo.country_code && (
-              <div style={{ display: 'flex', alignItems: 'center', gap: '0.8rem', marginTop: '0.5rem' }}>
-                <span style={{
-                  background: 'var(--color-bg-elevated)',
-                  border: '1px solid var(--color-border)',
-                  padding: '0.4rem 0.8rem',
-                  borderRadius: 'var(--radius-sm)',
-                  fontSize: '0.8rem',
-                  fontWeight: 600,
-                  letterSpacing: '0.1em',
-                  fontFamily: 'var(--font-heading)',
-                  color: 'var(--color-text-secondary)'
-                }}>
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  gap: "0.8rem",
+                  marginTop: "0.5rem",
+                }}
+              >
+                <span
+                  style={{
+                    background: "var(--color-bg-elevated)",
+                    border: "1px solid var(--color-border)",
+                    padding: "0.4rem 0.8rem",
+                    borderRadius: "var(--radius-sm)",
+                    fontSize: "0.8rem",
+                    fontWeight: 600,
+                    letterSpacing: "0.1em",
+                    fontFamily: "var(--font-heading)",
+                    color: "var(--color-text-secondary)",
+                  }}
+                >
                   {currentDriverInfo.country_code}
                 </span>
-                <span style={{ color: 'var(--color-text-muted)', fontSize: '0.9rem' }}>Nationality</span>
+                <span
+                  style={{
+                    color: "var(--color-text-muted)",
+                    fontSize: "0.9rem",
+                  }}
+                >
+                  Nationality
+                </span>
               </div>
             )}
           </div>
@@ -456,16 +620,41 @@ export default function DriverProfile() {
       </section>
 
       {/* 2. CURRENT SEASON WRAPPER */}
-      <section style={{ padding: '6vw 5vw' }}>
-
+      <section style={{ padding: "6vw 5vw" }}>
         {/* Section Header with drop-down */}
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: '2rem', marginBottom: '4rem' }}>
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "center",
+            flexWrap: "wrap",
+            gap: "2rem",
+            marginBottom: "4rem",
+          }}
+        >
           <div>
-            <span style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-accent-primary)', fontSize: '0.9rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            <span
+              style={{
+                fontFamily: "var(--font-heading)",
+                color: "var(--color-accent-primary)",
+                fontSize: "0.9rem",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+              }}
+            >
               Season Analytics
             </span>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', margin: '0.5rem 0 0 0', fontFamily: 'var(--font-heading)' }}>
-              PERFORMANCE <span style={{ color: 'var(--color-text-secondary)' }}>TRACKER</span>
+            <h2
+              style={{
+                fontSize: "clamp(2rem, 4vw, 3rem)",
+                margin: "0.5rem 0 0 0",
+                fontFamily: "var(--font-heading)",
+              }}
+            >
+              PERFORMANCE{" "}
+              <span style={{ color: "var(--color-text-secondary)" }}>
+                TRACKER
+              </span>
             </h2>
           </div>
 
@@ -473,19 +662,49 @@ export default function DriverProfile() {
             <CustomDropdown
               value={selectedYear}
               onChange={(val) => setSelectedYear(val)}
-              options={availableSeasons.map(y => ({ value: y, label: `${y} SEASON` }))}
+              options={availableSeasons.map((y) => ({
+                value: y,
+                label: `${y} SEASON`,
+              }))}
             />
           ) : (
-            <div className="skeleton-pulse" style={{ width: '160px', height: '42px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
+            <div
+              className="skeleton-pulse"
+              style={{
+                width: "160px",
+                height: "42px",
+                background: "rgba(255,255,255,0.05)",
+                borderRadius: "var(--radius-sm)",
+              }}
+            />
           )}
         </div>
 
         {/* Season Statistics Grid */}
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '2rem', marginBottom: '5rem' }}>
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+            gap: "2rem",
+            marginBottom: "5rem",
+          }}
+        >
           {[
-            { label: 'Poles', value: seasonStats.totalPoles, desc: 'Qualified P1' },
-            { label: 'Wins', value: seasonStats.totalWins, desc: 'Race victories' },
-            { label: 'Points Scored', value: seasonStats.totalPoints, desc: 'Estimated season points' }
+            {
+              label: "Poles",
+              value: seasonStats.totalPoles,
+              desc: "Qualified P1",
+            },
+            {
+              label: "Wins",
+              value: seasonStats.totalWins,
+              desc: "Race victories",
+            },
+            {
+              label: "Points Scored",
+              value: seasonStats.totalPoints,
+              desc: "Estimated season points",
+            },
           ].map((stat, i) => (
             <motion.div
               key={stat.label}
@@ -494,30 +713,66 @@ export default function DriverProfile() {
               viewport={{ once: true }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
               className="glass-panel"
-              style={{ padding: '2rem', display: 'flex', flexDirection: 'column', gap: '0.5rem', background: 'var(--color-bg-panel)', position: 'relative', overflow: 'hidden' }}
+              style={{
+                padding: "2rem",
+                display: "flex",
+                flexDirection: "column",
+                gap: "0.5rem",
+                background: "var(--color-bg-panel)",
+                position: "relative",
+                overflow: "hidden",
+              }}
             >
-              <div style={{ width: '4px', height: '24px', background: teamColor, position: 'absolute', left: 0, top: '2rem' }} />
-              <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', textTransform: 'uppercase', letterSpacing: '0.1em', fontWeight: 600 }}>
+              <div
+                style={{
+                  width: "4px",
+                  height: "24px",
+                  background: teamColor,
+                  position: "absolute",
+                  left: 0,
+                  top: "2rem",
+                }}
+              />
+              <span
+                style={{
+                  color: "var(--color-text-secondary)",
+                  fontSize: "0.85rem",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.1em",
+                  fontWeight: 600,
+                }}
+              >
                 {stat.label}
               </span>
               {loadingSeasonData ? (
                 <div
                   className="skeleton-pulse"
                   style={{
-                    height: '3rem',
-                    width: '80px',
-                    background: 'rgba(255,255,255,0.05)',
-                    borderRadius: 'var(--radius-sm)',
-                    margin: '0.5rem 0'
+                    height: "3rem",
+                    width: "80px",
+                    background: "rgba(255,255,255,0.05)",
+                    borderRadius: "var(--radius-sm)",
+                    margin: "0.5rem 0",
                   }}
                 />
               ) : (
-                <span style={{ fontSize: '3rem', fontFamily: 'var(--font-heading)', fontWeight: 700, color: '#fff', lineHeight: 1, margin: '0.5rem 0' }}>
+                <span
+                  style={{
+                    fontSize: "3rem",
+                    fontFamily: "var(--font-heading)",
+                    fontWeight: 700,
+                    color: "#fff",
+                    lineHeight: 1,
+                    margin: "0.5rem 0",
+                  }}
+                >
                   {stat.value}
                 </span>
               )}
-              <span style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem' }}>
-                {loadingSeasonData ? 'Retrieving data...' : stat.desc}
+              <span
+                style={{ color: "var(--color-text-muted)", fontSize: "0.8rem" }}
+              >
+                {loadingSeasonData ? "Retrieving data..." : stat.desc}
               </span>
             </motion.div>
           ))}
@@ -529,20 +784,38 @@ export default function DriverProfile() {
             className="glass-panel skeleton-pulse"
             style={{
               height: `${chartHeight}px`,
-              background: 'var(--color-bg-panel)',
-              borderRadius: 'var(--radius-lg)',
-              display: 'flex',
-              alignItems: 'center',
-              justify: 'center'
+              background: "var(--color-bg-panel)",
+              borderRadius: "var(--radius-lg)",
+              display: "flex",
+              alignItems: "center",
+              justify: "center",
             }}
           >
-            <p style={{ color: 'var(--color-text-secondary)', fontFamily: 'var(--font-heading)', fontSize: '1.1rem', letterSpacing: '0.1em' }}>
+            <p
+              style={{
+                color: "var(--color-text-secondary)",
+                fontFamily: "var(--font-heading)",
+                fontSize: "1.1rem",
+                letterSpacing: "0.1em",
+              }}
+            >
               Loading telemetry position data...
             </p>
           </div>
         ) : seasonStats.races.length === 0 ? (
-          <div className="state-container" style={{ border: '1px solid var(--color-border)', borderRadius: 'var(--radius-lg)' }}>
-            <p className="text-muted" style={{ fontSize: '1.1rem', fontFamily: 'var(--font-heading)' }}>No telemetry position data available for {selectedYear}.</p>
+          <div
+            className="state-container"
+            style={{
+              border: "1px solid var(--color-border)",
+              borderRadius: "var(--radius-lg)",
+            }}
+          >
+            <p
+              className="text-muted"
+              style={{ fontSize: "1.1rem", fontFamily: "var(--font-heading)" }}
+            >
+              No telemetry position data available for {selectedYear}.
+            </p>
           </div>
         ) : (
           <motion.div
@@ -551,38 +824,130 @@ export default function DriverProfile() {
             viewport={{ once: true }}
             transition={{ duration: 0.8 }}
             className="glass-panel"
-            style={{ padding: '3rem 2rem', background: 'var(--color-bg-panel)', borderRadius: 'var(--radius-lg)', position: 'relative' }}
+            style={{
+              padding: "3rem 2rem",
+              background: "var(--color-bg-panel)",
+              borderRadius: "var(--radius-lg)",
+              position: "relative",
+            }}
           >
-            <div style={{ display: 'flex', justifyContent: 'space-between', flexWrap: 'wrap', gap: '1rem', marginBottom: '2.5rem', paddingBottom: '1.5rem', borderBottom: '1px solid var(--color-border)' }}>
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "space-between",
+                flexWrap: "wrap",
+                gap: "1rem",
+                marginBottom: "2.5rem",
+                paddingBottom: "1.5rem",
+                borderBottom: "1px solid var(--color-border)",
+              }}
+            >
               <div>
-                <h3 style={{ margin: 0, fontSize: '1.5rem', fontFamily: 'var(--font-heading)' }}>
-                  Race vs. Qualifying <span style={{ color: 'var(--color-text-secondary)' }}>Positions</span>
+                <h3
+                  style={{
+                    margin: 0,
+                    fontSize: "1.5rem",
+                    fontFamily: "var(--font-heading)",
+                  }}
+                >
+                  Race vs. Qualifying{" "}
+                  <span style={{ color: "var(--color-text-secondary)" }}>
+                    Positions
+                  </span>
                 </h3>
-                <p style={{ color: 'var(--color-text-muted)', fontSize: '0.85rem', margin: '0.3rem 0 0 0' }}>
-                  Track finishing positions (solid) overlaying qualifying grids (dashed)
+                <p
+                  style={{
+                    color: "var(--color-text-muted)",
+                    fontSize: "0.85rem",
+                    margin: "0.3rem 0 0 0",
+                  }}
+                >
+                  Track finishing positions (solid) overlaying qualifying grids
+                  (dashed)
                 </p>
               </div>
 
               {/* Legend */}
-              <div style={{ display: 'flex', gap: '2rem', alignItems: 'center' }}>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <div style={{ width: '20px', height: '3px', background: teamColor }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Race Finish</span>
+              <div
+                style={{ display: "flex", gap: "2rem", alignItems: "center" }}
+              >
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.6rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "20px",
+                      height: "3px",
+                      background: teamColor,
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--color-text-secondary)",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Race Finish
+                  </span>
                 </div>
-                <div style={{ display: 'flex', alignItems: 'center', gap: '0.6rem' }}>
-                  <div style={{ width: '20px', height: '3px', borderTop: '2px dashed rgba(255,255,255,0.4)' }} />
-                  <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>Qualifying Grid</span>
+                <div
+                  style={{
+                    display: "flex",
+                    alignItems: "center",
+                    gap: "0.6rem",
+                  }}
+                >
+                  <div
+                    style={{
+                      width: "20px",
+                      height: "3px",
+                      borderTop: "2px dashed rgba(255,255,255,0.4)",
+                    }}
+                  />
+                  <span
+                    style={{
+                      fontSize: "0.85rem",
+                      color: "var(--color-text-secondary)",
+                      fontWeight: 600,
+                      textTransform: "uppercase",
+                    }}
+                  >
+                    Qualifying Grid
+                  </span>
                 </div>
               </div>
             </div>
 
             {/* Custom Responsive SVG Chart */}
-            <div style={{ width: '100%', overflowX: 'auto', WebkitOverflowScrolling: 'touch' }}>
-              <div style={{ minWidth: '850px', position: 'relative' }}>
-                <svg viewBox={`0 0 ${chartWidth} ${chartHeight}`} width="100%" height={chartHeight} style={{ overflow: 'visible' }}>
+            <div
+              style={{
+                width: "100%",
+                overflowX: "auto",
+                WebkitOverflowScrolling: "touch",
+              }}
+            >
+              <div style={{ minWidth: "850px", position: "relative" }}>
+                <svg
+                  viewBox={`0 0 ${chartWidth} ${chartHeight}`}
+                  width="100%"
+                  height={chartHeight}
+                  style={{ overflow: "visible" }}
+                >
                   <defs>
                     {/* Shadow Glow filter for the primary line */}
-                    <filter id="shadowGlow" x="-10%" y="-10%" width="120%" height="120%">
+                    <filter
+                      id="shadowGlow"
+                      x="-10%"
+                      y="-10%"
+                      width="120%"
+                      height="120%"
+                    >
                       <feGaussianBlur stdDeviation="6" result="blur" />
                       <feComponentTransfer in="blur" result="glow">
                         <feFuncA type="linear" slope="0.35" />
@@ -593,7 +958,13 @@ export default function DriverProfile() {
                       </feMerge>
                     </filter>
 
-                    <linearGradient id="lineGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <linearGradient
+                      id="lineGrad"
+                      x1="0%"
+                      y1="0%"
+                      x2="100%"
+                      y2="0%"
+                    >
                       <stop offset="0%" stopColor={teamColor} />
                       <stop offset="100%" stopColor={`${teamColor}aa`} />
                     </linearGradient>
@@ -636,14 +1007,22 @@ export default function DriverProfile() {
                           y1={paddingTop}
                           x2={x}
                           y2={chartHeight - paddingBottom}
-                          stroke={hoveredRoundIdx === idx ? "rgba(255,255,255,0.06)" : "transparent"}
+                          stroke={
+                            hoveredRoundIdx === idx
+                              ? "rgba(255,255,255,0.06)"
+                              : "transparent"
+                          }
                           strokeWidth={hoveredRoundIdx === idx ? "24" : "1"}
                           strokeLinecap="round"
                         />
                         <text
                           x={x}
                           y={chartHeight - paddingBottom + 25}
-                          fill={hoveredRoundIdx === idx ? "var(--color-accent-primary)" : "var(--color-text-muted)"}
+                          fill={
+                            hoveredRoundIdx === idx
+                              ? "var(--color-accent-primary)"
+                              : "var(--color-text-muted)"
+                          }
                           fontSize="11"
                           textAnchor="middle"
                           fontFamily="var(--font-heading)"
@@ -665,7 +1044,7 @@ export default function DriverProfile() {
                         return `${x},${y}`;
                       })
                       .filter(Boolean)
-                      .join(' ');
+                      .join(" ");
 
                     return points ? (
                       <polyline
@@ -688,7 +1067,7 @@ export default function DriverProfile() {
                         return `${x},${y}`;
                       })
                       .filter(Boolean)
-                      .join(' ');
+                      .join(" ");
 
                     return points ? (
                       <polyline
@@ -704,8 +1083,12 @@ export default function DriverProfile() {
                   {/* Render Node Dots */}
                   {seasonStats.races.map((race, idx) => {
                     const x = xRoundScale(idx, seasonStats.races.length);
-                    const yFinish = race.finishPosition ? yPosScale(race.finishPosition) : null;
-                    const yQual = race.qualifyingPosition ? yPosScale(race.qualifyingPosition) : null;
+                    const yFinish = race.finishPosition
+                      ? yPosScale(race.finishPosition)
+                      : null;
+                    const yQual = race.qualifyingPosition
+                      ? yPosScale(race.qualifyingPosition)
+                      : null;
                     const isHovered = hoveredRoundIdx === idx;
 
                     return (
@@ -719,7 +1102,7 @@ export default function DriverProfile() {
                             fill="var(--color-bg-base)"
                             stroke="rgba(255,255,255,0.4)"
                             strokeWidth="1.5"
-                            style={{ transition: 'all 0.2s' }}
+                            style={{ transition: "all 0.2s" }}
                           />
                         )}
                         {/* Finish Dot */}
@@ -741,7 +1124,7 @@ export default function DriverProfile() {
                               fill={teamColor}
                               stroke="#ffffff"
                               strokeWidth="1.5"
-                              style={{ transition: 'all 0.2s' }}
+                              style={{ transition: "all 0.2s" }}
                             />
                           </g>
                         )}
@@ -763,48 +1146,108 @@ export default function DriverProfile() {
                 </svg>
 
                 {/* Graph Tooltip Box */}
-                {hoveredRoundIdx !== null && seasonStats.races[hoveredRoundIdx] && (
-                  <div style={{
-                    position: 'absolute',
-                    top: '20px',
-                    left: `${xRoundScale(hoveredRoundIdx, seasonStats.races.length) + (hoveredRoundIdx > seasonStats.races.length / 2 ? -260 : 30)}px`,
-                    width: '230px',
-                    background: 'rgba(10, 10, 10, 0.95)',
-                    border: `1px solid ${teamColor}55`,
-                    borderRadius: 'var(--radius-md)',
-                    padding: '1.2rem',
-                    boxShadow: 'var(--shadow-panel)',
-                    backdropFilter: 'blur(10px)',
-                    zIndex: 100,
-                    pointerEvents: 'none',
-                    transition: 'left 0.2s ease-out'
-                  }}>
-                    <span style={{ fontSize: '0.75rem', color: 'var(--color-accent-primary)', textTransform: 'uppercase', letterSpacing: '0.15em', fontWeight: 600, display: 'block', marginBottom: '0.4rem' }}>
-                      Round {seasonStats.races[hoveredRoundIdx].round}
-                    </span>
-                    <h4 style={{ fontSize: '1.1rem', margin: '0 0 0.2rem 0', fontFamily: 'var(--font-heading)', color: '#fff', textTransform: 'uppercase' }}>
-                      {seasonStats.races[hoveredRoundIdx].circuit}
-                    </h4>
-                    <p style={{ color: 'var(--color-text-muted)', fontSize: '0.8rem', margin: '0 0 1rem 0' }}>
-                      {seasonStats.races[hoveredRoundIdx].country}
-                    </p>
+                {hoveredRoundIdx !== null &&
+                  seasonStats.races[hoveredRoundIdx] && (
+                    <div
+                      style={{
+                        position: "absolute",
+                        top: "20px",
+                        left: `${xRoundScale(hoveredRoundIdx, seasonStats.races.length) + (hoveredRoundIdx > seasonStats.races.length / 2 ? -260 : 30)}px`,
+                        width: "230px",
+                        background: "rgba(10, 10, 10, 0.95)",
+                        border: `1px solid ${teamColor}55`,
+                        borderRadius: "var(--radius-md)",
+                        padding: "1.2rem",
+                        boxShadow: "var(--shadow-panel)",
+                        backdropFilter: "blur(10px)",
+                        zIndex: 100,
+                        pointerEvents: "none",
+                        transition: "left 0.2s ease-out",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: "0.75rem",
+                          color: "var(--color-accent-primary)",
+                          textTransform: "uppercase",
+                          letterSpacing: "0.15em",
+                          fontWeight: 600,
+                          display: "block",
+                          marginBottom: "0.4rem",
+                        }}
+                      >
+                        Round {seasonStats.races[hoveredRoundIdx].round}
+                      </span>
+                      <h4
+                        style={{
+                          fontSize: "1.1rem",
+                          margin: "0 0 0.2rem 0",
+                          fontFamily: "var(--font-heading)",
+                          color: "#fff",
+                          textTransform: "uppercase",
+                        }}
+                      >
+                        {seasonStats.races[hoveredRoundIdx].circuit}
+                      </h4>
+                      <p
+                        style={{
+                          color: "var(--color-text-muted)",
+                          fontSize: "0.8rem",
+                          margin: "0 0 1rem 0",
+                        }}
+                      >
+                        {seasonStats.races[hoveredRoundIdx].country}
+                      </p>
 
-                    <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.8rem' }}>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--color-text-secondary)' }}>Qualifying:</span>
-                        <span style={{ fontWeight: 600, color: '#fff' }}>
-                          {seasonStats.races[hoveredRoundIdx].qualifyingPosition ? `P${seasonStats.races[hoveredRoundIdx].qualifyingPosition}` : 'DNF/DNS'}
-                        </span>
-                      </div>
-                      <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                        <span style={{ color: 'var(--color-text-secondary)' }}>Race Finish:</span>
-                        <span style={{ fontWeight: 600, color: teamColor }}>
-                          {seasonStats.races[hoveredRoundIdx].finishPosition ? `P${seasonStats.races[hoveredRoundIdx].finishPosition}` : 'DNF'}
-                        </span>
+                      <div
+                        style={{
+                          display: "flex",
+                          flexDirection: "column",
+                          gap: "0.5rem",
+                          borderTop: "1px solid rgba(255,255,255,0.06)",
+                          paddingTop: "0.8rem",
+                        }}
+                      >
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: "0.85rem",
+                          }}
+                        >
+                          <span
+                            style={{ color: "var(--color-text-secondary)" }}
+                          >
+                            Qualifying:
+                          </span>
+                          <span style={{ fontWeight: 600, color: "#fff" }}>
+                            {seasonStats.races[hoveredRoundIdx]
+                              .qualifyingPosition
+                              ? `P${seasonStats.races[hoveredRoundIdx].qualifyingPosition}`
+                              : "DNF/DNS"}
+                          </span>
+                        </div>
+                        <div
+                          style={{
+                            display: "flex",
+                            justifyContent: "space-between",
+                            fontSize: "0.85rem",
+                          }}
+                        >
+                          <span
+                            style={{ color: "var(--color-text-secondary)" }}
+                          >
+                            Race Finish:
+                          </span>
+                          <span style={{ fontWeight: 600, color: teamColor }}>
+                            {seasonStats.races[hoveredRoundIdx].finishPosition
+                              ? `P${seasonStats.races[hoveredRoundIdx].finishPosition}`
+                              : "DNF"}
+                          </span>
+                        </div>
                       </div>
                     </div>
-                  </div>
-                )}
+                  )}
               </div>
             </div>
           </motion.div>
@@ -812,48 +1255,141 @@ export default function DriverProfile() {
       </section>
 
       {/* 4. CAREER SCROLL SECTION */}
-      <section ref={timelineRef} style={{
-        padding: '8vw 5vw',
-        borderTop: '1px solid var(--color-border)',
-        background: 'linear-gradient(to bottom, var(--color-bg-base), #000 70%)'
-      }}>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', flexWrap: 'wrap', gap: '4rem' }}>
-
+      <section
+        ref={timelineRef}
+        style={{
+          padding: "8vw 5vw",
+          borderTop: "1px solid var(--color-border)",
+          background:
+            "linear-gradient(to bottom, var(--color-bg-base), #000 70%)",
+        }}
+      >
+        <div
+          style={{
+            display: "flex",
+            justifyContent: "space-between",
+            alignItems: "flex-start",
+            flexWrap: "wrap",
+            gap: "4rem",
+          }}
+        >
           {/* Left Timeline (F1 Teams Driven For) */}
-          <div style={{ flex: '1 1 350px', position: 'relative', paddingLeft: '4rem' }}>
-            <span style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-accent-primary)', fontSize: '0.9rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+          <div
+            style={{
+              flex: "1 1 350px",
+              position: "relative",
+              paddingLeft: "4rem",
+            }}
+          >
+            <span
+              style={{
+                fontFamily: "var(--font-heading)",
+                color: "var(--color-accent-primary)",
+                fontSize: "0.9rem",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+              }}
+            >
               Historical Path
             </span>
-            <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', margin: '0.5rem 0 3rem 0', fontFamily: 'var(--font-heading)' }}>
-              F1 TEAM <span style={{ color: 'var(--color-text-secondary)' }}>TIMELINE</span>
+            <h2
+              style={{
+                fontSize: "clamp(2rem, 4vw, 3rem)",
+                margin: "0.5rem 0 3rem 0",
+                fontFamily: "var(--font-heading)",
+              }}
+            >
+              F1 TEAM{" "}
+              <span style={{ color: "var(--color-text-secondary)" }}>
+                TIMELINE
+              </span>
             </h2>
 
             {constructorTimeline === null ? (
-              <div style={{ display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>
+              <div
+                style={{
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "3.5rem",
+                }}
+              >
                 {[1, 2, 3].map((i) => (
-                  <div key={i} style={{ display: 'flex', flexDirection: 'column', gap: '0.6rem', paddingLeft: '0.5rem' }}>
-                    <div className="skeleton-pulse" style={{ height: '0.85rem', width: '70px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
-                    <div className="skeleton-pulse" style={{ height: '1.6rem', width: '220px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
-                    <div className="skeleton-pulse" style={{ height: '0.85rem', width: '130px', background: 'rgba(255,255,255,0.05)', borderRadius: 'var(--radius-sm)' }} />
+                  <div
+                    key={i}
+                    style={{
+                      display: "flex",
+                      flexDirection: "column",
+                      gap: "0.6rem",
+                      paddingLeft: "0.5rem",
+                    }}
+                  >
+                    <div
+                      className="skeleton-pulse"
+                      style={{
+                        height: "0.85rem",
+                        width: "70px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "var(--radius-sm)",
+                      }}
+                    />
+                    <div
+                      className="skeleton-pulse"
+                      style={{
+                        height: "1.6rem",
+                        width: "220px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "var(--radius-sm)",
+                      }}
+                    />
+                    <div
+                      className="skeleton-pulse"
+                      style={{
+                        height: "0.85rem",
+                        width: "130px",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "var(--radius-sm)",
+                      }}
+                    />
                   </div>
                 ))}
               </div>
             ) : constructorTimeline.length === 0 ? (
-              <p style={{ color: 'var(--color-text-muted)' }}>No historical timeline team details available.</p>
+              <p style={{ color: "var(--color-text-muted)" }}>
+                No historical timeline team details available.
+              </p>
             ) : (
-              <div style={{ position: 'relative', display: 'flex', flexDirection: 'column', gap: '3.5rem' }}>
-
+              <div
+                style={{
+                  position: "relative",
+                  display: "flex",
+                  flexDirection: "column",
+                  gap: "3.5rem",
+                }}
+              >
                 {/* Connecting Scroll Line */}
-                <div style={{
-                  position: 'absolute', left: '-2.5rem', top: '10px', bottom: '10px', width: '2px',
-                  background: 'rgba(255,255,255,0.06)'
-                }} />
+                <div
+                  style={{
+                    position: "absolute",
+                    left: "-2.5rem",
+                    top: "10px",
+                    bottom: "10px",
+                    width: "2px",
+                    background: "rgba(255,255,255,0.06)",
+                  }}
+                />
 
-                <motion.div style={{
-                  position: 'absolute', left: '-2.5rem', top: '10px', bottom: '10px', width: '2px',
-                  background: teamColor,
-                  scaleY, transformOrigin: 'top'
-                }} />
+                <motion.div
+                  style={{
+                    position: "absolute",
+                    left: "-2.5rem",
+                    top: "10px",
+                    bottom: "10px",
+                    width: "2px",
+                    background: teamColor,
+                    scaleY,
+                    transformOrigin: "top",
+                  }}
+                />
 
                 {constructorTimeline.map((item, idx) => (
                   <motion.div
@@ -862,37 +1398,74 @@ export default function DriverProfile() {
                     whileInView={{ opacity: 1, x: 0 }}
                     viewport={{ once: true, margin: "-100px" }}
                     transition={{ duration: 0.6, delay: idx * 0.1 }}
-                    style={{ position: 'relative' }}
+                    style={{ position: "relative" }}
                   >
                     {/* Ring dot on line */}
-                    <div style={{
-                      position: 'absolute', left: '-3rem', top: '6px',
-                      width: '18px', height: '18px', borderRadius: '50%',
-                      background: 'var(--color-bg-base)', border: `2px solid ${idx === constructorTimeline.length - 1 ? teamColor : 'rgba(255,255,255,0.2)'}`,
-                      display: 'flex', alignItems: 'center', justifyContent: 'center',
-                      zIndex: 5
-                    }}>
-                      <div style={{
-                        width: '6px', height: '6px', borderRadius: '50%',
-                        background: idx === constructorTimeline.length - 1 ? teamColor : 'rgba(255,255,255,0.2)'
-                      }} />
+                    <div
+                      style={{
+                        position: "absolute",
+                        left: "-3rem",
+                        top: "6px",
+                        width: "18px",
+                        height: "18px",
+                        borderRadius: "50%",
+                        background: "var(--color-bg-base)",
+                        border: `2px solid ${idx === constructorTimeline.length - 1 ? teamColor : "rgba(255,255,255,0.2)"}`,
+                        display: "flex",
+                        alignItems: "center",
+                        justifyContent: "center",
+                        zIndex: 5,
+                      }}
+                    >
+                      <div
+                        style={{
+                          width: "6px",
+                          height: "6px",
+                          borderRadius: "50%",
+                          background:
+                            idx === constructorTimeline.length - 1
+                              ? teamColor
+                              : "rgba(255,255,255,0.2)",
+                        }}
+                      />
                     </div>
 
                     {/* Team Details */}
                     <div>
-                      <span style={{
-                        fontSize: '0.8rem',
-                        fontFamily: 'var(--font-heading)',
-                        fontWeight: 600,
-                        color: idx === constructorTimeline.length - 1 ? teamColor : 'var(--color-text-muted)',
-                        letterSpacing: '0.1em'
-                      }}>
-                        {item.startYear} {item.endYear && item.endYear !== item.startYear ? `– ${item.endYear}` : ''}
+                      <span
+                        style={{
+                          fontSize: "0.8rem",
+                          fontFamily: "var(--font-heading)",
+                          fontWeight: 600,
+                          color:
+                            idx === constructorTimeline.length - 1
+                              ? teamColor
+                              : "var(--color-text-muted)",
+                          letterSpacing: "0.1em",
+                        }}
+                      >
+                        {item.startYear}{" "}
+                        {item.endYear && item.endYear !== item.startYear
+                          ? `– ${item.endYear}`
+                          : ""}
                       </span>
-                      <h4 style={{ fontSize: '1.6rem', margin: '0.3rem 0 0.2rem 0', fontFamily: 'var(--font-heading)', color: '#fff' }}>
+                      <h4
+                        style={{
+                          fontSize: "1.6rem",
+                          margin: "0.3rem 0 0.2rem 0",
+                          fontFamily: "var(--font-heading)",
+                          color: "#fff",
+                        }}
+                      >
                         {item.name}
                       </h4>
-                      <p style={{ color: 'var(--color-text-secondary)', fontSize: '0.85rem', margin: 0 }}>
+                      <p
+                        style={{
+                          color: "var(--color-text-secondary)",
+                          fontSize: "0.85rem",
+                          margin: 0,
+                        }}
+                      >
                         {item.nationality} • {item.seasonsCount} season(s)
                       </p>
                     </div>
@@ -903,67 +1476,168 @@ export default function DriverProfile() {
           </div>
 
           {/* Right Column (Career F1 Summary) */}
-          <div style={{ flex: '1 1 350px', background: 'var(--color-bg-panel)', padding: '3.5rem', borderRadius: 'var(--radius-lg)', border: '1px solid var(--color-border)', position: 'relative' }}>
+          <div
+            style={{
+              flex: "1 1 350px",
+              background: "var(--color-bg-panel)",
+              padding: "3.5rem",
+              borderRadius: "var(--radius-lg)",
+              border: "1px solid var(--color-border)",
+              position: "relative",
+            }}
+          >
+            <div
+              style={{
+                position: "absolute",
+                top: 0,
+                left: 0,
+                right: 0,
+                height: "4px",
+                background: `linear-gradient(to right, ${teamColor}, transparent)`,
+              }}
+            />
 
-            <div style={{
-              position: 'absolute', top: 0, left: 0, right: 0, height: '4px',
-              background: `linear-gradient(to right, ${teamColor}, transparent)`
-            }} />
-
-            <span style={{ fontFamily: 'var(--font-heading)', color: 'var(--color-text-muted)', fontSize: '0.9rem', letterSpacing: '0.2em', textTransform: 'uppercase' }}>
+            <span
+              style={{
+                fontFamily: "var(--font-heading)",
+                color: "var(--color-text-muted)",
+                fontSize: "0.9rem",
+                letterSpacing: "0.2em",
+                textTransform: "uppercase",
+              }}
+            >
               Historical Archives
             </span>
-            <h2 style={{ fontSize: '2rem', margin: '0.5rem 0 3rem 0', fontFamily: 'var(--font-heading)' }}>
-              CAREER <span style={{ color: 'var(--color-text-secondary)' }}>SUMMARY</span>
+            <h2
+              style={{
+                fontSize: "2rem",
+                margin: "0.5rem 0 3rem 0",
+                fontFamily: "var(--font-heading)",
+              }}
+            >
+              CAREER{" "}
+              <span style={{ color: "var(--color-text-secondary)" }}>
+                SUMMARY
+              </span>
             </h2>
 
             {!careerStats ? (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem 2rem' }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "3rem 2rem",
+                }}
+              >
                 {[
-                  { label: 'Championships', size: 'huge' },
-                  { label: 'Grand Prix Wins', size: 'large' },
-                  { label: 'Pole Positions', size: 'large' },
-                  { label: 'Podiums', size: 'large' },
-                  { label: 'Races Started', size: 'large' },
-                  { label: 'Best Season', size: 'huge' }
+                  { label: "Championships", size: "huge" },
+                  { label: "Grand Prix Wins", size: "large" },
+                  { label: "Pole Positions", size: "large" },
+                  { label: "Podiums", size: "large" },
+                  { label: "Races Started", size: "large" },
+                  { label: "Best Season", size: "huge" },
                 ].map((stat, idx) => (
-                  <div key={stat.label} style={{ gridColumn: (idx === 0 || idx === 5) ? '1 / -1' : 'auto' }}>
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '0.6rem', fontWeight: 600 }}>
+                  <div
+                    key={stat.label}
+                    style={{
+                      gridColumn: idx === 0 || idx === 5 ? "1 / -1" : "auto",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "var(--color-text-secondary)",
+                        fontSize: "0.8rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        display: "block",
+                        marginBottom: "0.6rem",
+                        fontWeight: 600,
+                      }}
+                    >
                       {stat.label}
                     </span>
                     <div
                       className="skeleton-pulse"
                       style={{
-                        height: stat.size === 'huge' ? '3.5rem' : '2.5rem',
-                        width: stat.size === 'huge' ? '70%' : '50%',
-                        background: 'rgba(255,255,255,0.05)',
-                        borderRadius: 'var(--radius-sm)'
+                        height: stat.size === "huge" ? "3.5rem" : "2.5rem",
+                        width: stat.size === "huge" ? "70%" : "50%",
+                        background: "rgba(255,255,255,0.05)",
+                        borderRadius: "var(--radius-sm)",
                       }}
                     />
                   </div>
                 ))}
               </div>
             ) : (
-              <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '3rem 2rem' }}>
+              <div
+                style={{
+                  display: "grid",
+                  gridTemplateColumns: "1fr 1fr",
+                  gap: "3rem 2rem",
+                }}
+              >
                 {[
-                  { label: 'Championships', value: careerStats.titles, color: 'var(--color-accent-tertiary)' },
-                  { label: 'Grand Prix Wins', value: careerStats.wins, color: '#fff' },
-                  { label: 'Pole Positions', value: careerStats.poles, color: '#fff' },
-                  { label: 'Podiums', value: careerStats.podiums, color: '#fff' },
-                  { label: 'Races Started', value: careerStats.starts, color: 'var(--color-text-secondary)' },
-                  { label: 'Best Season', value: careerStats.bestSeasonPoints ? `${careerStats.bestSeasonYear} (${careerStats.bestSeasonPoints} PTS)` : 'N/A', color: 'var(--color-accent-secondary)' }
+                  {
+                    label: "Championships",
+                    value: careerStats.titles,
+                    color: "var(--color-accent-tertiary)",
+                  },
+                  {
+                    label: "Grand Prix Wins",
+                    value: careerStats.wins,
+                    color: "#fff",
+                  },
+                  {
+                    label: "Pole Positions",
+                    value: careerStats.poles,
+                    color: "#fff",
+                  },
+                  {
+                    label: "Podiums",
+                    value: careerStats.podiums,
+                    color: "#fff",
+                  },
+                  {
+                    label: "Races Started",
+                    value: careerStats.starts,
+                    color: "var(--color-text-secondary)",
+                  },
+                  {
+                    label: "Best Season",
+                    value: careerStats.bestSeasonPoints
+                      ? `${careerStats.bestSeasonYear} (${careerStats.bestSeasonPoints} PTS)`
+                      : "N/A",
+                    color: "var(--color-accent-secondary)",
+                  },
                 ].map((stat, idx) => (
-                  <div key={stat.label} style={{ gridColumn: (idx === 0 || idx === 5) ? '1 / -1' : 'auto' }}>
-                    <span style={{ color: 'var(--color-text-secondary)', fontSize: '0.8rem', textTransform: 'uppercase', letterSpacing: '0.08em', display: 'block', marginBottom: '0.4rem', fontWeight: 600 }}>
+                  <div
+                    key={stat.label}
+                    style={{
+                      gridColumn: idx === 0 || idx === 5 ? "1 / -1" : "auto",
+                    }}
+                  >
+                    <span
+                      style={{
+                        color: "var(--color-text-secondary)",
+                        fontSize: "0.8rem",
+                        textTransform: "uppercase",
+                        letterSpacing: "0.08em",
+                        display: "block",
+                        marginBottom: "0.4rem",
+                        fontWeight: 600,
+                      }}
+                    >
                       {stat.label}
                     </span>
-                    <span style={{
-                      fontSize: (idx === 0 || idx === 5) ? '4rem' : '2.8rem',
-                      fontFamily: 'var(--font-heading)',
-                      fontWeight: 800,
-                      color: stat.color,
-                      lineHeight: 0.9
-                    }}>
+                    <span
+                      style={{
+                        fontSize: idx === 0 || idx === 5 ? "4rem" : "2.8rem",
+                        fontFamily: "var(--font-heading)",
+                        fontWeight: 800,
+                        color: stat.color,
+                        lineHeight: 0.9,
+                      }}
+                    >
                       {stat.value}
                     </span>
                   </div>
@@ -971,10 +1645,8 @@ export default function DriverProfile() {
               </div>
             )}
           </div>
-
         </div>
       </section>
-
     </div>
   );
 }

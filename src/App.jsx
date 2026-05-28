@@ -1,14 +1,19 @@
-import React from 'react'
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
-import PageLayout from './components/layout/PageLayout'
+import React from "react";
+import {
+  BrowserRouter as Router,
+  Routes,
+  Route,
+  Navigate,
+} from "react-router-dom";
+import PageLayout from "./components/layout/PageLayout";
 
 // Pages
-import Home from './pages/Home'
-import Drivers from './pages/Drivers'
-import Teams from './pages/Teams'
-import TeamProfile from './pages/TeamProfile'
-import Events from './pages/Events'
-import DriverProfile from './pages/DriverProfile'
+import Home from "./pages/Home";
+import Drivers from "./pages/Drivers";
+import Teams from "./pages/Teams";
+import TeamProfile from "./pages/TeamProfile";
+import Events from "./pages/Events";
+import DriverProfile from "./pages/DriverProfile";
 
 function App() {
   return (
@@ -26,7 +31,7 @@ function App() {
         </Routes>
       </PageLayout>
     </Router>
-  )
+  );
 }
 
-export default App
+export default App;

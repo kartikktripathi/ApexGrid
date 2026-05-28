@@ -1,7 +1,6 @@
 # 🏁 ApexGrid
 
-**ApexGrid** is an interactive Formula 1 data and strategy platform that combines real-time race insights with a competitive prediction game. 
----
+## **ApexGrid** is an interactive Formula 1 data and strategy platform that combines real-time race insights with a competitive prediction game.
 
 ## 🎯 Purpose
 
@@ -9,10 +8,10 @@ Formula 1 is not just about watching races — it’s about understanding perfor
 
 **ApexGrid bridges this gap** by:
 
-* Providing structured and interactive access to F1 data
-* Allowing users to track ongoing seasons and past races
-* Introducing a competitive game that rewards strategic thinking
-* Making Formula 1 more engaging and accessible for all users
+- Providing structured and interactive access to F1 data
+- Allowing users to track ongoing seasons and past races
+- Introducing a competitive game that rewards strategic thinking
+- Making Formula 1 more engaging and accessible for all users
 
 ---
 
@@ -20,10 +19,10 @@ Formula 1 is not just about watching races — it’s about understanding perfor
 
 This project uses the **OpenF1 API**, an open-source API that provides access to detailed Formula 1 data, including:
 
-* Session and race information
-* Driver data
-* Timing and classification data
-* Championship standings
+- Session and race information
+- Driver data
+- Timing and classification data
+- Championship standings
 
 🔗 https://openf1.org/
 
@@ -33,27 +32,27 @@ This project uses the **OpenF1 API**, an open-source API that provides access to
 
 ### 🧭 Season & Race Explorer
 
-* View data for the **current F1 season (default)**
-* Access selected **past seasons**
-* Track **ongoing race weekends and current standings**
-* Explore race-specific data across sessions
+- View data for the **current F1 season (default)**
+- Access selected **past seasons**
+- Track **ongoing race weekends and current standings**
+- Explore race-specific data across sessions
 
 ---
 
 ### 📊 Championship Tracking
 
-* **Driver Standings**
-* **Constructor Standings**
-* Updates based on latest race data
+- **Driver Standings**
+- **Constructor Standings**
+- Updates based on latest race data
 
 ---
 
 ## 🎯 Target Users
 
-* Formula 1 fans who want deeper insights
-* Beginners exploring the sport interactively
-* Competitive users who enjoy strategy-based games
-* Developers interested in sports data applications
+- Formula 1 fans who want deeper insights
+- Beginners exploring the sport interactively
+- Competitive users who enjoy strategy-based games
+- Developers interested in sports data applications
 
 ---
 
@@ -61,10 +60,10 @@ This project uses the **OpenF1 API**, an open-source API that provides access to
 
 Unlike traditional F1 dashboards, ApexGrid:
 
-* Combines **data + interaction + gameplay**
-* Encourages **strategic thinking**, not just viewing
-* Provides **real-time and historical context**
-* Makes complex race data **intuitive and engaging**
+- Combines **data + interaction + gameplay**
+- Encourages **strategic thinking**, not just viewing
+- Provides **real-time and historical context**
+- Makes complex race data **intuitive and engaging**
 
 ---
 
@@ -77,16 +76,16 @@ Development will focus on building a smooth, interactive, and visually intuitive
 
 ## 📖 Future Scope
 
-* Advanced scoring systems for the game
-* Private leagues / multiplayer rooms
-* Predictive analytics and race simulations
+- Advanced scoring systems for the game
+- Private leagues / multiplayer rooms
+- Predictive analytics and race simulations
 
 ---
 
 ## 🤝 Acknowledgements
 
-* OpenF1 API for providing accessible Formula 1 data
-* The Formula 1 community for inspiration
+- OpenF1 API for providing accessible Formula 1 data
+- The Formula 1 community for inspiration
 
 ---
 

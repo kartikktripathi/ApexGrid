@@ -1,24 +1,24 @@
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useState } from "react";
 
 const ThemeContext = createContext();
 
 export function ThemeProvider({ children }) {
   const [isLight, setIsLight] = useState(() => {
-    return localStorage.getItem('apexgrid-theme') === 'light';
+    return localStorage.getItem("apexgrid-theme") === "light";
   });
 
   useEffect(() => {
     if (isLight) {
-      document.body.classList.add('light');
+      document.body.classList.add("light");
     } else {
-      document.body.classList.remove('light');
+      document.body.classList.remove("light");
     }
   }, [isLight]);
 
   const toggleTheme = () => {
-    setIsLight(prev => {
+    setIsLight((prev) => {
       const next = !prev;
-      localStorage.setItem('apexgrid-theme', next ? 'light' : 'dark');
+      localStorage.setItem("apexgrid-theme", next ? "light" : "dark");
       return next;
     });
   };

@@ -4,29 +4,29 @@
   --color-bg-panel: #0a0a0a;
   --color-bg-elevated: #111111;
   --color-bg-glass: rgba(20, 20, 20, 0.4);
-  
+
   --color-accent-primary: #e10600; /* F1 Neon Red */
   --color-accent-secondary: #00d2be; /* Teal */
   --color-accent-tertiary: #ffd700; /* Gold */
-  
+
   --color-text-primary: #ffffff;
   --color-text-secondary: #888888;
   --color-text-muted: #555555;
-  
+
   --color-border: rgba(255, 255, 255, 0.08);
   --color-border-hover: rgba(255, 255, 255, 0.15);
-  
-  --font-heading: 'Clash Display', sans-serif;
-  --font-body: 'Satoshi', sans-serif;
-  
+
+  --font-heading: "Clash Display", sans-serif;
+  --font-body: "Satoshi", sans-serif;
+
   --shadow-glow: 0 0 20px rgba(225, 6, 0, 0.4);
   --shadow-glow-subtle: 0 0 10px rgba(225, 6, 0, 0.15);
   --shadow-panel: 0 20px 40px rgba(0, 0, 0, 0.8);
-  
+
   --radius-sm: 2px;
   --radius-md: 6px;
   --radius-lg: 12px;
-  
+
   --transition-fast: 0.2s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-smooth: 0.4s cubic-bezier(0.16, 1, 0.3, 1);
   --transition-slow: 0.8s cubic-bezier(0.16, 1, 0.3, 1);
@@ -54,7 +54,12 @@ body {
   letter-spacing: -0.01em;
 }
 
-h1, h2, h3, h4, h5, h6 {
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
   font-family: var(--font-heading);
   font-weight: 600;
   letter-spacing: 0.02em;
@@ -88,7 +93,10 @@ button {
   border-radius: var(--radius-md);
   padding: 2rem;
   box-shadow: var(--shadow-panel);
-  transition: border-color var(--transition-fast), transform var(--transition-smooth), background var(--transition-smooth);
+  transition:
+    border-color var(--transition-fast),
+    transform var(--transition-smooth),
+    background var(--transition-smooth);
 }
 
 .glass-panel:hover {
@@ -117,9 +125,12 @@ button {
 }
 
 .btn::before {
-  content: '';
+  content: "";
   position: absolute;
-  top: 0; left: 0; width: 100%; height: 100%;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
   background: var(--color-accent-primary);
   transform: scaleX(0);
   transform-origin: right;
@@ -155,26 +166,38 @@ button {
 }
 
 /* Typography Utilities */
-.text-accent { color: var(--color-accent-primary); }
-.text-muted { color: var(--color-text-secondary); }
-.text-sm { font-size: 0.875rem; }
-.text-lg { font-size: 1.125rem; }
-.text-xl { font-size: 1.5rem; }
-.font-heading { font-family: var(--font-heading); }
+.text-accent {
+  color: var(--color-accent-primary);
+}
+.text-muted {
+  color: var(--color-text-secondary);
+}
+.text-sm {
+  font-size: 0.875rem;
+}
+.text-lg {
+  font-size: 1.125rem;
+}
+.text-xl {
+  font-size: 1.5rem;
+}
+.font-heading {
+  font-family: var(--font-heading);
+}
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
   width: 8px;
 }
 ::-webkit-scrollbar-track {
-  background: var(--color-bg-base); 
+  background: var(--color-bg-base);
 }
 ::-webkit-scrollbar-thumb {
-  background: var(--color-text-muted); 
+  background: var(--color-text-muted);
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: var(--color-text-secondary); 
+  background: var(--color-text-secondary);
 }
 
 /* Spinner */
@@ -189,7 +212,9 @@ button {
 }
 
 @keyframes spin {
-  to { transform: rotate(360deg); }
+  to {
+    transform: rotate(360deg);
+  }
 }
 
 .state-container {
