@@ -8,6 +8,7 @@ import ErrorState from '../components/ui/ErrorState';
 import MeetingCard from '../components/calendar/MeetingCard';
 import CustomDropdown from '../components/ui/CustomDropdown';
 import { getDriverSlug } from '../components/driver/DriverCard';
+import { getTeamSlug } from '../components/team/TeamCard';
 
 export default function Events() {
   const navigate = useNavigate();
@@ -668,7 +669,25 @@ export default function Events() {
 
                                 {/* Team Name */}
                                 <td style={{ padding: '1rem', color: 'var(--color-text-secondary)' }}>
-                                  <span>{constructor.name}</span>
+                                  <span
+                                    onClick={() => {
+                                      const teamState = {
+                                        team_name: constructor.name,
+                                        constructorId: constructor.constructorId
+                                      };
+                                      const slug = getTeamSlug(constructor.name);
+                                      navigate(`/teams/${slug}`, { state: { team: teamState } });
+                                    }}
+                                    style={{
+                                      cursor: 'pointer',
+                                      transition: 'color 0.2s',
+                                      fontWeight: 500
+                                    }}
+                                    onMouseEnter={(e) => e.target.style.color = 'var(--color-accent-primary)'}
+                                    onMouseLeave={(e) => e.target.style.color = 'var(--color-text-secondary)'}
+                                  >
+                                    {constructor.name}
+                                  </span>
                                 </td>
 
                                 {/* Qualifying Times vs Race Stats */}
