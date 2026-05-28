@@ -236,23 +236,31 @@ export default function TeamProfile() {
           }
         });
 
+        const completedRaces = (raceData || []).filter(r => new Date(r.date_start) < new Date());
+        const hasCompletedRaces = completedRaces.length > 0;
+
+        if (hasCompletedRaces && uniqueDrivers.length < 2) {
+          throw new Error(`Could not resolve both drivers for team in ${selectedYear}`);
+        }
+
         if (isMounted) setCurrentDrivers(uniqueDrivers);
 
         // Fetch finish positions for both resolved driver numbers
         const positionsData = await Promise.all(
           uniqueDrivers.map(async (driver) => {
-            try {
-              const res = await fetch(`https://api.openf1.org/v1/session_result?driver_number=${driver.driver_number}`);
-              if (!res.ok) throw new Error("Positions API error");
-              const data = await res.json();
-              return {
-                driver_number: driver.driver_number,
-                results: Array.isArray(data) ? data : []
-              };
-            } catch (err) {
-              console.warn(`Telemetry failed for driver ${driver.driver_number}`, err);
-              return { driver_number: driver.driver_number, results: [] };
+            const res = await fetch(`https://api.openf1.org/v1/session_result?driver_number=${driver.driver_number}`);
+            if (!res.ok) throw new Error(`Telemetry request failed for driver ${driver.driver_number}`);
+            const data = await res.json();
+            const results = Array.isArray(data) ? data : [];
+
+            if (hasCompletedRaces && results.length === 0) {
+              throw new Error(`Empty telemetry results returned for driver ${driver.driver_number}`);
             }
+
+            return {
+              driver_number: driver.driver_number,
+              results
+            };
           })
         );
 
