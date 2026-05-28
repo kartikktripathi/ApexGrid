@@ -178,8 +178,12 @@ export default function Home() {
       {/* 1. HERO SECTION */}
       <HeroSection scrollYProgress={scrollYProgress} onExplore={() => navigate('/events')} />
 
-      {/* NEXT DESTINATION SECTON */}
-      {nextEvent && <NextRaceSection nextEvent={nextEvent} navigate={navigate} />}
+      {/* NEXT DESTINATION SECTION */}
+      {loading ? (
+        <NextRaceSkeleton />
+      ) : (
+        nextEvent && <NextRaceSection nextEvent={nextEvent} navigate={navigate} />
+      )}
 
       {/* 2. DRIVER STANDINGS */}
       <StandingsSection drivers={drivers} loading={loading} />
@@ -705,6 +709,148 @@ function NextRaceSection({ nextEvent, navigate }) {
           zIndex: 0
         }} />
       )}
+    </section>
+  );
+}
+
+function NextRaceSkeleton() {
+  return (
+    <section 
+      style={{ 
+        padding: '10vw 5vw', 
+        position: 'relative', 
+        zIndex: 2, 
+        background: 'var(--color-bg-base)',
+        borderBottom: '1px solid var(--color-border)',
+        overflow: 'hidden'
+      }}
+    >
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        flexWrap: 'wrap',
+        gap: '3rem'
+      }}>
+        {/* Left column: Title Skeleton */}
+        <div style={{ flex: '0 0 250px', display: 'flex', flexDirection: 'column', gap: '1.5rem' }}>
+          <div style={{ position: 'relative', overflow: 'hidden', width: '150px', height: '40px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+            <motion.div
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+              style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+              }}
+            />
+          </div>
+          <div style={{ position: 'relative', overflow: 'hidden', width: '90px', height: '24px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+            <motion.div
+              animate={{ x: ['-100%', '200%'] }}
+              transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+              style={{
+                position: 'absolute', inset: 0,
+                background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+              }}
+            />
+          </div>
+        </div>
+
+        {/* Right column: Event Details & Countdown Skeleton */}
+        <div style={{ flex: '1', minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+          
+          {/* Circuit Details Skeleton */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            {/* flag & date */}
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem' }}>
+              <div style={{ position: 'relative', overflow: 'hidden', width: '45px', height: '30px', background: 'rgba(255,255,255,0.03)', borderRadius: '3px' }}>
+                <motion.div
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                  style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+                  }}
+                />
+              </div>
+              <div style={{ position: 'relative', overflow: 'hidden', width: '180px', height: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+                <motion.div
+                  animate={{ x: ['-100%', '200%'] }}
+                  transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                  style={{
+                    position: 'absolute', inset: 0,
+                    background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+                  }}
+                />
+              </div>
+            </div>
+            {/* main title */}
+            <div style={{ position: 'relative', overflow: 'hidden', width: '80%', height: '50px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+              <motion.div
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+                }}
+              />
+            </div>
+            {/* circuit details line */}
+            <div style={{ position: 'relative', overflow: 'hidden', width: '60%', height: '20px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+              <motion.div
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+                }}
+              />
+            </div>
+          </div>
+
+          {/* Countdown Clock Skeleton */}
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '1rem' }}>
+            <div style={{ position: 'relative', overflow: 'hidden', width: '120px', height: '14px', background: 'rgba(255,255,255,0.03)', borderRadius: '4px' }}>
+              <motion.div
+                animate={{ x: ['-100%', '200%'] }}
+                transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                style={{
+                  position: 'absolute', inset: 0,
+                  background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+                }}
+              />
+            </div>
+            
+            <div style={{ display: 'flex', gap: '2rem', alignItems: 'baseline' }}>
+              {[1, 2, 3, 4].map((i) => (
+                <div key={i} style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline' }}>
+                  <div style={{ position: 'relative', overflow: 'hidden', width: '80px', height: '70px', background: 'rgba(255,255,255,0.03)', borderRadius: '6px' }}>
+                    <motion.div
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                      style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+                      }}
+                    />
+                  </div>
+                  <div style={{ position: 'relative', overflow: 'hidden', width: '15px', height: '18px', background: 'rgba(255,255,255,0.03)', borderRadius: '3px' }}>
+                    <motion.div
+                      animate={{ x: ['-100%', '200%'] }}
+                      transition={{ repeat: Infinity, duration: 1.5, ease: 'linear' }}
+                      style={{
+                        position: 'absolute', inset: 0,
+                        background: 'linear-gradient(90deg, transparent, rgba(255,255,255,0.05), transparent)',
+                      }}
+                    />
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+
+        </div>
+      </div>
     </section>
   );
 }
