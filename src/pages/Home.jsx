@@ -45,6 +45,8 @@ export default function Home() {
             };
           });
           if (isMounted) setDrivers(sorted);
+        } else {
+          hasError = true;
         }
       } catch (err) {
         console.error("Failed to load driver API data:", err);
@@ -150,6 +152,8 @@ export default function Home() {
           }
 
           if (isMounted) setNextEvent(resolvedNextEvent);
+        } else {
+          hasError = true;
         }
       } catch (err) {
         console.error("Failed to load calendar API data:", err);
@@ -157,9 +161,10 @@ export default function Home() {
       }
 
       if (isMounted) {
-        setLoading(false);
         if (hasError) {
           timerId = setTimeout(loadData, 10000);
+        } else {
+          setLoading(false);
         }
       }
     };
