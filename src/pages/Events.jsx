@@ -68,14 +68,12 @@ export default function Events() {
         // Filter out testing
         let validMeetings = meetingsData.filter(m => m.meeting_name !== 'Pre-Season Testing');
         
-        // Fallback to 2024 if no data is found for the current year, to prevent empty states
-        if (validMeetings.length === 0 && selectedYear === new Date().getFullYear()) {
-          console.log("No events found for current year, falling back to 2024...");
-          meetingsData = await f1Api.getMeetings(2024).catch(() => []);
-          racesData = await f1Api.getSessions(2024, 'Race').catch(() => []);
-          sprintsData = await f1Api.getSessions(2024, 'Sprint').catch(() => []);
-          validMeetings = meetingsData.filter(m => m.meeting_name !== 'Pre-Season Testing');
-          setSelectedYear(2024);
+        if (validMeetings.length === 0) {
+          console.log(`No events found for ${selectedYear}, retrying in 10s...`);
+          if (isMounted) {
+            timerId = setTimeout(fetchCalendar, 10000);
+          }
+          return;
         }
 
         setMeetings(validMeetings);
@@ -85,7 +83,6 @@ export default function Events() {
       } catch (err) {
         console.error("Failed to load events calendar:", err);
         if (isMounted) {
-          setError("Failed to load events data. Retrying...");
           timerId = setTimeout(fetchCalendar, 10000);
         }
       }
