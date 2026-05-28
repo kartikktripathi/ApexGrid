@@ -1,94 +1,357 @@
 # 🏁 ApexGrid
 
-## **ApexGrid** is an interactive Formula 1 data and strategy platform that combines real-time race insights with a competitive prediction game.
+> A premium telemetry-inspired Formula 1 web experience built for fans who love data, speed, and visual storytelling.
 
-## 🎯 Purpose
+ApexGrid is a high-performance Formula 1 analytics and exploration platform that transforms raw motorsport telemetry and historical race data into an immersive, visually rich single-page application.
 
-Formula 1 is not just about watching races — it’s about understanding performance, strategy, and decision-making. However, most platforms either focus only on raw data or only on entertainment.
-
-**ApexGrid bridges this gap** by:
-
-- Providing structured and interactive access to F1 data
-- Allowing users to track ongoing seasons and past races
-- Introducing a competitive game that rewards strategic thinking
-- Making Formula 1 more engaging and accessible for all users
+ApexGrid quickly evolved into a large-scale frontend engineering experiment focused on real-world API handling, interactive data visualisation, responsive UI systems, and performance-conscious client-side architecture.
 
 ---
 
-## 🔗 API Used
+## ✨ Features
 
-This project uses the **OpenF1 API**, an open-source API that provides access to detailed Formula 1 data, including:
+### 🏎️ Live Grand Prix Countdown System
 
-- Session and race information
-- Driver data
-- Timing and classification data
-- Championship standings
-
-🔗 https://openf1.org/
+* Dynamic UTC-aware race countdown timers
+* Automatic live race detection
+* Intelligent race-state switching
 
 ---
 
-## 🚀 Planned Features
+### 📊 Interactive Championship Standings
 
-### 🧭 Season & Race Explorer
-
-- View data for the **current F1 season (default)**
-- Access selected **past seasons**
-- Track **ongoing race weekends and current standings**
-- Explore race-specific data across sessions
+* Custom asymmetrical leaderboard layouts
+* Featured P1 hero cards
+* Constructor and driver championship tables
+* Telemetry-inspired dominance indicators
 
 ---
 
-### 📊 Championship Tracking
+### 📈 SVG Telemetry Charts
 
-- **Driver Standings**
-- **Constructor Standings**
-- Updates based on latest race data
+Custom-built inline SVG visualization system without heavyweight charting libraries.
 
----
+Features include:
 
-## 🎯 Target Users
-
-- Formula 1 fans who want deeper insights
-- Beginners exploring the sport interactively
-- Competitive users who enjoy strategy-based games
-- Developers interested in sports data applications
+* Race finish progression tracking
+* Qualifying vs race comparisons
+* Multi-driver constructor overlays
+* Dynamic coordinate scaling
+* Smart tooltip positioning
 
 ---
 
-## 🧠 What Makes ApexGrid Different
+### 🗓️ Dynamic Race Calendar
 
-Unlike traditional F1 dashboards, ApexGrid:
-
-- Combines **data + interaction + gameplay**
-- Encourages **strategic thinking**, not just viewing
-- Provides **real-time and historical context**
-- Makes complex race data **intuitive and engaging**
-
----
-
-## 📌 Project Status
-
-This project is currently in the **planning and design phase**.
-Development will focus on building a smooth, interactive, and visually intuitive experience.
+* Full Formula 1 season schedule
+* Lazy-loaded race details
+* Podium snapshots
+* Session timelines
+* Race classification modals
 
 ---
 
-## 📖 Future Scope
+### 👤 Driver & Team Profiles
 
-- Advanced scoring systems for the game
-- Private leagues / multiplayer rooms
-- Predictive analytics and race simulations
+Detailed pages including:
 
----
-
-## 🤝 Acknowledgements
-
-- OpenF1 API for providing accessible Formula 1 data
-- The Formula 1 community for inspiration
+* Career timelines
+* Constructor history
+* Wins, podiums, poles, starts
+* Championship standings by season
+* Team performance analytics
 
 ---
 
-## 📢 Tagline
+### 🎨 Premium Motorsport UI
 
-> **“Explore the grid. Build your strategy. Win the race.”**
+Inspired by Formula 1 broadcast aesthetics:
+
+* Dark telemetry-focused interface
+* Neon-accented visual hierarchy
+* Motion-driven interactions
+* Animated skeleton loaders
+* Responsive layouts optimized for desktop and mobile
+
+---
+
+# 🧠 Engineering Highlights
+
+## ⚡ Viewport-Based Lazy Loading
+
+Race cards fetch deep telemetry data only when they enter the viewport, using Framer Motion viewport observers.
+
+This significantly reduces unnecessary API calls and improves perceived loading performance.
+
+---
+
+## 🗄️ LocalStorage Smart Caching
+
+ApexGrid implements custom client-side caching policies to reduce pressure on public APIs.
+
+---
+
+## 🔁 Automatic Retry & Backoff Handling
+
+### OpenF1 API
+
+* Automatic retry every 10 seconds on temporary failures
+* Mount safety checks to prevent state updates on unmounted components
+
+### Jolpica Ergast API
+
+* Retry throttling for `429 Too Many Requests`
+* Delayed retry system to reduce rate-limit pressure
+
+---
+
+## 📡 Third-Party API Disclaimer
+
+ApexGrid relies on two public third-party Formula 1 APIs that are **not owned or controlled by this project**.
+
+Because these APIs aggregate massive telemetry datasets and are community/publicly maintained:
+
+* occasional slow responses,
+* downtime,
+* inconsistent schemas,
+* or rate limiting
+
+may occur.
+
+To improve stability, ApexGrid implements:
+
+* local caching,
+* retry systems,
+* skeleton loading states,
+* and deferred data fetching.
+
+Still, some pages — especially deep historical profiles — may load slower during high API traffic.
+
+---
+
+# 🧱 Tech Stack
+
+## Frontend
+
+* React 18
+* React Router DOM
+* Vite
+
+## Styling
+
+* Vanilla CSS
+* CSS Modules
+
+## Motion & Interaction
+
+* Framer Motion
+
+## Data Handling
+
+* Fetch API
+* Custom hooks
+* LocalStorage caching
+
+## Visualization
+
+* Raw SVG telemetry rendering
+
+## Tooling
+
+* ESLint
+* Prettier
+* npm
+
+---
+
+# 📡 APIs Used
+
+## OpenF1 API
+
+Used for:
+
+* live telemetry data
+* meetings
+* session timelines
+* standings
+* driver/team positioning
+
+Base URL:
+
+```bash
+https://api.openf1.org/v1
+```
+
+---
+
+## Jolpica Ergast API
+
+Used for:
+
+* historical race archives
+* qualifying sheets
+* standings history
+* constructor timelines
+* driver statistics
+
+Base URL:
+
+```bash
+https://api.jolpi.ca/ergast/f1
+```
+
+---
+
+# 📂 Project Structure
+
+```bash
+ApexGrid/
+├── public/
+├── src/
+│   ├── components/
+│   ├── hooks/
+│   ├── pages/
+│   ├── utils/
+│   ├── App.jsx
+│   ├── main.jsx
+│   └── index.css
+├── package.json
+└── vite.config.js
+```
+
+---
+
+# 📦 Installation
+
+## Clone Repository
+
+```bash
+git clone https://github.com/<your-username>/ApexGrid.git
+cd ApexGrid
+```
+
+---
+
+## Install Dependencies
+
+```bash
+npm install
+```
+
+---
+
+## Run Development Server
+
+```bash
+npm run dev
+```
+
+---
+
+## Build Production Assets
+
+```bash
+npm run build
+```
+
+---
+
+## Preview Production Build
+
+```bash
+npm run preview
+```
+
+---
+
+# 🖥️ Deployment
+
+ApexGrid is currently deployed on Vercel: https://apex-grid-seven.vercel.app/
+
+Since the app uses SPA routing, redirect/rewrite rules may be required for page refreshes on nested routes.
+
+---
+
+# 📱 Responsiveness
+
+The application is optimized for:
+
+* desktop
+* tablets
+* modern smartphones
+
+Special attention was given to:
+
+* responsive typography
+* layout wrapping
+* overflow handling
+* mobile alignment systems
+* viewport-safe SVG rendering
+
+---
+
+# ⚠️ Known Limitations
+
+## Slow Deep Historical Queries
+
+Some driver/team profiles require multiple sequential standings requests across seasons.
+
+Initial loading may occasionally feel slow depending on API response times.
+
+---
+
+## Public API Reliability
+
+Because the project depends on public/community-maintained APIs:
+
+* some endpoints may temporarily fail,
+* future season endpoints may return 404s,
+* or schema inconsistencies may appear.
+
+---
+
+## Technical Debt
+
+Some page files became significantly larger during rapid feature expansion and experimentation.
+
+Potential future improvements:
+
+* component extraction
+* better utility normalization
+* centralized telemetry helpers
+* stronger TypeScript migration
+
+---
+
+# 🚀 Future Improvements
+
+Planned ideas include:
+
+* predictive race analytics
+* fantasy/team systems
+
+---
+
+# 💭 Final Notes
+
+ApexGrid was built as both:
+
+* a motorsport passion project,
+* and a frontend engineering playground.
+
+A major focus of the project was learning how to handle:
+
+* imperfect APIs,
+* performance bottlenecks,
+* data-heavy UI systems,
+* and scalable component-driven architecture.
+
+The project intentionally balances experimentation, visual design, and practical engineering tradeoffs — making it both a technical showcase and a creative build.
+
+---
+
+## 📄 License
+
+MIT License
+
+Feel free to fork, learn from, and build upon the project.
