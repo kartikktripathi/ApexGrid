@@ -338,6 +338,7 @@ export default function Events() {
                     index={nextEventData.index} 
                     raceSession={nextEventData.session}
                     variant="large"
+                    showCountdown={true}
                     onClick={nextEventData.meeting.is_cancelled ? null : () => setSelectedEvent({
                       meeting: nextEventData.meeting,
                       round: getActualRound(nextEventData.meeting),

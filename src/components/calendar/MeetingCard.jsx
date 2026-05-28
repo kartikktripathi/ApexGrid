@@ -2,7 +2,7 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { f1Api } from '../../utils/api';
 
-export default function MeetingCard({ meeting, raceSession, isNextRace, index, variant = 'large', onClick }) {
+export default function MeetingCard({ meeting, raceSession, isNextRace, index, variant = 'large', onClick, showCountdown = false }) {
   const [podium, setPodium] = useState(null);
   const [loadingWinner, setLoadingWinner] = useState(false);
   const [inView, setInView] = useState(false);
@@ -66,7 +66,7 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
   }, [isCompleted, raceSession, index, meeting.meeting_name, inView, podium]);
 
   useEffect(() => {
-    if (!isNextRace || !raceSession?.date_start) return;
+    if (!showCountdown || !raceSession?.date_start) return;
 
     const parseUtcDate = (dateStr) => {
       if (!dateStr) return null;
@@ -111,7 +111,7 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
     }, 1000);
 
     return () => clearInterval(timer);
-  }, [isNextRace, raceSession]);
+  }, [showCountdown, raceSession]);
 
   const startDate = new Date(meeting.date_start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const endDate = new Date(meeting.date_end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -131,7 +131,7 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
   };
 
   const localSessionData = useMemo(() => {
-    if (isNextRace || !raceSession?.date_start) return null;
+    if (showCountdown || !raceSession?.date_start) return null;
     const localDate = parseUtcDate(raceSession.date_start);
     if (!localDate || isNaN(localDate.getTime())) return null;
 
@@ -304,7 +304,7 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
           </div>
 
           {/* Countdown timer for the Next/Upcoming Race */}
-          {isNextRace && timeLeft && (
+          {showCountdown && timeLeft && (
             <div style={{
               marginTop: '2rem',
               display: 'flex',
