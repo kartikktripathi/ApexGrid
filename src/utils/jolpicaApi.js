@@ -357,15 +357,189 @@ export const jolpicaApi = {
     }
   },
 
-  /**
-   * Fetches the official sprint session classification (results) for a specific year and round
-   */
   getSprintResults: async (year, round) => {
     try {
       const data = await fetchJolpica(`/${year}/${round}/sprint.json`);
       return data?.MRData?.RaceTable?.Races[0]?.SprintResults || [];
     } catch (e) {
       console.error(`Failed to fetch sprint results for ${year} Rd ${round}`, e);
+      return [];
+    }
+  },
+
+  /**
+   * Resolves a team name to its Ergast/Jolpica constructor ID dynamically
+   */
+  getConstructorId: async (teamName) => {
+    try {
+      const clean = (s) => (s || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '').trim();
+      const tcClean = clean(teamName);
+
+      // Fetch current season constructors
+      const data = await fetchJolpica("/current/constructors.json?limit=100");
+      const constructors = data?.MRData?.ConstructorTable?.Constructors || [];
+
+      let match = constructors.find(c => clean(c.name) === tcClean || clean(c.constructorId) === tcClean || tcClean.includes(clean(c.name)) || clean(c.name).includes(tcClean));
+
+      if (!match) {
+        // Fallback: search 2024
+        const data2024 = await fetchJolpica("/2024/constructors.json?limit=100").catch(() => null);
+        const constructors2024 = data2024?.MRData?.ConstructorTable?.Constructors || [];
+        match = constructors2024.find(c => clean(c.name) === tcClean || clean(c.constructorId) === tcClean || tcClean.includes(clean(c.name)) || clean(c.name).includes(tcClean));
+      }
+
+      if (!match) {
+        // Fallback: search historically
+        const dataAll = await fetchJolpica("/constructors.json?limit=1000").catch(() => null);
+        const constructorsAll = dataAll?.MRData?.ConstructorTable?.Constructors || [];
+        match = constructorsAll.find(c => clean(c.name) === tcClean || clean(c.constructorId) === tcClean || tcClean.includes(clean(c.name)) || clean(c.name).includes(tcClean));
+      }
+
+      return match ? match.constructorId : tcClean;
+    } catch (error) {
+      console.error(`Failed to resolve constructor ID for ${teamName}`, error);
+      return teamName.toLowerCase().replace(/[^a-z0-9]/g, '_');
+    }
+  },
+
+  /**
+   * Fetches seasons in which the constructor participated
+   */
+  getConstructorSeasons: async (constructorId) => {
+    try {
+      const data = await fetchJolpica(`/constructors/${constructorId}/seasons.json?limit=100`);
+      const seasons = data?.MRData?.SeasonTable?.Seasons || [];
+      return seasons.map(s => parseInt(s.season, 10)).sort((a, b) => b - a);
+    } catch (e) {
+      console.error(`Failed to fetch seasons for constructor ${constructorId}`, e);
+      throw e;
+    }
+  },
+
+  /**
+   * Fetches standings (position, points, wins) for a constructor in a specific season
+   */
+  getConstructorSeasonStats: async (constructorId, year) => {
+    try {
+      const data = await fetchJolpica(`/${year}/constructorStandings.json`);
+      const standings = data?.MRData?.StandingsTable?.StandingsLists[0]?.ConstructorStandings || [];
+      const match = standings.find(s => s.Constructor.constructorId === constructorId);
+      
+      return match ? {
+        position: parseInt(match.position, 10),
+        points: parseFloat(match.points || 0),
+        wins: parseInt(match.wins || 0, 10)
+      } : {
+        position: '—',
+        points: 0,
+        wins: 0
+      };
+    } catch (e) {
+      console.error(`Failed to fetch constructor standings for ${constructorId} in ${year}`, e);
+      return { position: '—', points: 0, wins: 0 };
+    }
+  },
+
+  getConstructorCareerStats: async (constructorId) => {
+    try {
+      const seasonsData = await fetchJolpica(`/constructors/${constructorId}/seasons.json?limit=100`).catch(() => null);
+      const seasons = seasonsData?.MRData?.SeasonTable?.Seasons || [];
+
+      let championshipsCount = 0;
+      let bestSeasonPoints = 0;
+      let bestSeasonYear = null;
+
+      for (const s of seasons) {
+        try {
+          const res = await fetchJolpica(`/${s.season}/constructors/${constructorId}/constructorStandings.json`);
+          const list = res?.MRData?.StandingsTable?.StandingsLists || [];
+          if (list.length > 0) {
+            const constructorStandings = list[0].ConstructorStandings || [];
+            if (constructorStandings.length > 0) {
+              const standing = constructorStandings[0];
+              const pos = standing.position;
+              const pts = parseFloat(standing.points || 0);
+              const season = list[0].season;
+
+              const completed = await isSeasonCompleted(s.season);
+              if (completed) {
+                if (pos === "1") {
+                  championshipsCount++;
+                }
+                if (pts > bestSeasonPoints) {
+                  bestSeasonPoints = pts;
+                  bestSeasonYear = season;
+                }
+              }
+            }
+          }
+          await delay(150);
+        } catch (err) {
+          console.error(`Failed to fetch standings for season ${s.season}`, err);
+
+          // If it's a 404 and it's the current year or future, it's safe to skip it (stands for no data yet)
+          const is404 = err.message.includes("404");
+          const isCurrentOrFuture = parseInt(s.season, 10) >= new Date().getFullYear();
+          if (is404 && isCurrentOrFuture) {
+            console.log(`Skipping constructor standings for current/future season ${s.season} due to 404`);
+            continue;
+          }
+
+          if (err.message.includes("429")) {
+            await delay(1500); // Backoff and retry once
+            try {
+              const res = await fetchJolpica(`/${s.season}/constructors/${constructorId}/constructorStandings.json`);
+              const list = res?.MRData?.StandingsTable?.StandingsLists || [];
+              if (list.length > 0) {
+                const constructorStandings = list[0].ConstructorStandings || [];
+                if (constructorStandings.length > 0) {
+                  const standing = constructorStandings[0];
+                  const pos = standing.position;
+                  const pts = parseFloat(standing.points || 0);
+                  const season = list[0].season;
+                  const completed = await isSeasonCompleted(s.season);
+                  if (completed) {
+                    if (pos === "1") {
+                      championshipsCount++;
+                    }
+                    if (pts > bestSeasonPoints) {
+                      bestSeasonPoints = pts;
+                      bestSeasonYear = season;
+                    }
+                  }
+                }
+              }
+            } catch (retryErr) {
+              console.error(`Retry failed for season ${s.season}`, retryErr);
+            }
+          }
+        }
+      }
+
+      const winsData = await fetchJolpica(`/constructors/${constructorId}/results/1.json?limit=1000`).catch(() => null);
+      const wins = parseInt(winsData?.MRData?.total || 0, 10);
+
+      return {
+        titles: championshipsCount,
+        wins,
+        bestSeasonPoints,
+        bestSeasonYear
+      };
+    } catch (error) {
+      console.error(`Failed to fetch career stats for constructor ${constructorId}`, error);
+      throw error;
+    }
+  },
+
+  /**
+   * Fetches drivers who drove for constructor in a specific year
+   */
+  getConstructorDrivers: async (constructorId, year) => {
+    try {
+      const data = await fetchJolpica(`/${year}/constructors/${constructorId}/drivers.json?limit=100`);
+      return data?.MRData?.DriverTable?.Drivers || [];
+    } catch (e) {
+      console.error(`Failed to fetch drivers for constructor ${constructorId} in ${year}`, e);
       return [];
     }
   }

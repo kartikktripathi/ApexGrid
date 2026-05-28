@@ -1,14 +1,28 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
+import { useNavigate } from 'react-router-dom';
+
+export const getTeamSlug = (teamName) => {
+  return (teamName || '')
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9_]/g, '_')
+    .replace(/_+/g, '_')
+    .replace(/^_+|_+$/g, '');
+};
 
 export function ConstructorHero({ team, dominancePercentage }) {
+  const navigate = useNavigate();
+  const [isHovered, setIsHovered] = useState(false);
   const teamColor = team?.team_colour ? `#${team.team_colour}` : "#e10600";
-
-  // Dummy telemetry points for visual flair
-  const telemetryPoints = "0,40 20,30 40,50 60,20 80,45 100,10 120,60 140,20 160,30 180,10 200,50";
 
   return (
     <motion.div 
+      onClick={() => navigate(`/teams/${getTeamSlug(team.team_name)}`, { state: { team } })}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      whileHover={{ scale: 1.005, y: -2 }}
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.8 }}
@@ -17,12 +31,15 @@ export function ConstructorHero({ team, dominancePercentage }) {
         flexDirection: 'column',
         position: 'relative',
         background: 'var(--color-bg-elevated)',
-        border: '1px solid var(--color-border)',
+        border: '1px solid',
+        borderColor: isHovered ? 'var(--color-border-hover)' : 'var(--color-border)',
         borderRadius: 'var(--radius-lg)',
         overflow: 'hidden',
         minHeight: '400px',
         padding: '3rem',
-        boxShadow: 'inset 0 0 100px rgba(0,0,0,0.8)',
+        boxShadow: isHovered ? `0 0 40px ${teamColor}15` : 'inset 0 0 100px rgba(0,0,0,0.8)',
+        cursor: 'pointer',
+        transition: 'border-color 0.3s, box-shadow 0.3s'
       }}
     >
       <div style={{ position: 'absolute', top: 0, left: 0, width: '4px', height: '100%', background: teamColor }} />
@@ -90,6 +107,7 @@ export function ConstructorHero({ team, dominancePercentage }) {
 }
 
 export function PerformanceBarRow({ team, rank }) {
+  const navigate = useNavigate();
   const [isHovered, setIsHovered] = useState(false);
   const teamColor = team.team_colour ? `#${team.team_colour}` : "#e10600";
 
@@ -97,6 +115,7 @@ export function PerformanceBarRow({ team, rank }) {
     <motion.div
       onMouseEnter={() => setIsHovered(true)}
       onMouseLeave={() => setIsHovered(false)}
+      onClick={() => navigate(`/teams/${getTeamSlug(team.team_name)}`, { state: { team } })}
       initial={{ opacity: 0, x: -20 }}
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: "-50px" }}
@@ -112,9 +131,17 @@ export function PerformanceBarRow({ team, rank }) {
         borderRadius: 'var(--radius-sm)',
         position: 'relative',
         transition: 'all 0.3s ease',
-        cursor: 'crosshair', // technical feel
+        cursor: 'pointer',
       }}
     >
+      <div style={{ 
+        position: 'absolute', left: 0, top: 0, bottom: 0, width: '4px', 
+        background: teamColor, 
+        transform: isHovered ? 'scaleY(1)' : 'scaleY(0)', 
+        transition: 'transform var(--transition-fast)', 
+        transformOrigin: 'center' 
+      }} />
+      
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: '1.5rem' }}>
           <div style={{ fontFamily: 'var(--font-heading)', fontSize: '1.2rem', color: 'var(--color-text-muted)', width: '30px' }}>
@@ -141,7 +168,6 @@ export function PerformanceBarRow({ team, rank }) {
 }
 
 export default function TeamCard({ team, rank, variant = 'performance', dominancePercentage = 0 }) {
-  // Using dominancePercentage for the hero
   if (variant === 'hero') {
     return <ConstructorHero team={team} dominancePercentage={dominancePercentage} />;
   }
