@@ -1,5 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { motion, AnimatePresence } from "framer-motion";
+import styles from "./CustomDropdown.module.css";
 
 export default function CustomDropdown({ value, options, onChange, style }) {
   const [isOpen, setIsOpen] = useState(false);
@@ -35,6 +36,7 @@ export default function CustomDropdown({ value, options, onChange, style }) {
         onClick={() => setIsOpen(!isOpen)}
         onMouseEnter={() => setIsHovered(true)}
         onMouseLeave={() => setIsHovered(false)}
+        className={styles.dropdownTrigger}
         style={{
           background:
             "var(--color-bg-panel, var(--color-bg-elevated, #1a1a1a))",
@@ -44,8 +46,6 @@ export default function CustomDropdown({ value, options, onChange, style }) {
             isOpen || isHovered
               ? "var(--color-border-hover, #555)"
               : "var(--color-border, #333)",
-          padding: "1rem 3rem 1rem 1.5rem",
-          fontSize: "1.2rem",
           fontWeight: 600,
           fontFamily: "var(--font-heading)",
           borderRadius: "var(--radius-md, 4px)",
@@ -56,7 +56,6 @@ export default function CustomDropdown({ value, options, onChange, style }) {
           alignItems: "center",
           justifyContent: "space-between",
           userSelect: "none",
-          minWidth: "200px",
         }}
       >
         <span>{selectedOption?.label}</span>
@@ -116,9 +115,8 @@ export default function CustomDropdown({ value, options, onChange, style }) {
                       : "transparent";
                   e.target.style.color = "var(--color-text-primary, #ffffff)";
                 }}
+                className={styles.dropdownItem}
                 style={{
-                  padding: "1rem 1.5rem",
-                  fontSize: "1.1rem",
                   fontWeight: 500,
                   fontFamily: "var(--font-heading)",
                   cursor: "pointer",
@@ -143,3 +141,4 @@ export default function CustomDropdown({ value, options, onChange, style }) {
     </div>
   );
 }
+

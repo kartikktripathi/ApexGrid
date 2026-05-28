@@ -241,3 +241,71 @@ button {
 .skeleton-pulse {
   animation: pulse 1.5s ease-in-out infinite;
 }
+
+@media (max-width: 768px) {
+  .page-container {
+    padding: 0 1rem;
+  }
+  .mobile-stack {
+    flex-direction: column !important;
+    gap: 1rem !important;
+  }
+  .mobile-no-border {
+    border-left: none !important;
+    padding-left: 0 !important;
+  }
+  .mobile-hide-watermark {
+    display: none !important;
+  }
+  .mobile-no-margin {
+    margin-right: 0.5rem !important;
+  }
+  .mobile-no-padding {
+    padding: 1rem 1.2rem !important;
+  }
+  .mobile-shrink-text {
+    font-size: 1.5rem !important;
+  }
+  .mobile-grid-1col {
+    grid-template-columns: 1fr !important;
+    gap: 1.5rem !important;
+  }
+  .mobile-align-start {
+    align-items: flex-start !important;
+  }
+  .mobile-text-left {
+    text-align: left !important;
+  }
+  .mobile-show-only {
+    display: flex !important;
+  }
+  .mobile-hide-desktop-only {
+    display: none !important;
+  }
+}
+
+.mobile-show-only {
+  display: none !important;
+}
+
+.page-header {
+  padding: 130px 5vw 4vw 5vw;
+}
+.teams-header {
+  padding: 130px 5vw 3vw 5vw;
+}
+.profile-header {
+  padding: 155px 5vw 6vw 5vw;
+}
+
+@media (max-width: 768px) {
+  .page-header, .teams-header {
+    padding: 120px 5vw 20px 5vw !important;
+  }
+  .profile-header {
+    padding: 145px 5vw 30px 5vw !important;
+  }
+}
+
+
+

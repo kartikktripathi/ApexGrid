@@ -1,17 +1,19 @@
 import React, { useState } from "react";
 import { NavLink } from "react-router-dom";
-import { motion, useScroll, useMotionValueEvent } from "framer-motion";
+import { motion, useScroll, useMotionValueEvent, AnimatePresence } from "framer-motion";
 import styles from "./Navbar.module.css";
 
 export default function Navbar() {
   const { scrollY } = useScroll();
   const [hidden, setHidden] = useState(false);
   const [scrolled, setScrolled] = useState(false);
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   useMotionValueEvent(scrollY, "change", (latest) => {
     const previous = scrollY.getPrevious();
     if (latest > previous && latest > 150) {
       setHidden(true);
+      setMobileOpen(false); // Auto close mobile menu if scrolling down
     } else {
       setHidden(false);
     }
@@ -70,8 +72,69 @@ export default function Navbar() {
               Events
             </NavLink>
           </div>
+          <button
+            className={styles.menuButton}
+            onClick={() => setMobileOpen(!mobileOpen)}
+            aria-label="Toggle navigation menu"
+          >
+            {mobileOpen ? (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="18" y1="6" x2="6" y2="18"></line>
+                <line x1="6" y1="6" x2="18" y2="18"></line>
+              </svg>
+            ) : (
+              <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                <line x1="3" y1="12" x2="21" y2="12"></line>
+                <line x1="3" y1="6" x2="21" y2="6"></line>
+                <line x1="3" y1="18" x2="21" y2="18"></line>
+              </svg>
+            )}
+          </button>
         </div>
+
+        <AnimatePresence>
+          {mobileOpen && (
+            <motion.div
+              className={styles.mobileMenu}
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              transition={{ duration: 0.25, ease: "easeInOut" }}
+            >
+              <div className={styles.mobileLinks}>
+                <NavLink
+                  to="/drivers"
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    isActive ? styles.activeMobileLink : styles.mobileLink
+                  }
+                >
+                  Drivers
+                </NavLink>
+                <NavLink
+                  to="/teams"
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    isActive ? styles.activeMobileLink : styles.mobileLink
+                  }
+                >
+                  Teams
+                </NavLink>
+                <NavLink
+                  to="/events"
+                  onClick={() => setMobileOpen(false)}
+                  className={({ isActive }) =>
+                    isActive ? styles.activeMobileLink : styles.mobileLink
+                  }
+                >
+                  Events
+                </NavLink>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
       </motion.nav>
     </div>
   );
 }
+

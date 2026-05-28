@@ -276,7 +276,8 @@ export default function Events() {
       }}
     >
       <div
-        style={{ padding: "8vw 5vw 4vw 5vw", position: "relative", zIndex: 20 }}
+        className="page-header"
+        style={{ position: "relative", zIndex: 20 }}
       >
         <div
           style={{
@@ -639,7 +640,7 @@ export default function Events() {
               display: "flex",
               alignItems: "center",
               justifyContent: "center",
-              padding: "2rem",
+              padding: "clamp(0.4rem, 2vw, 2rem)",
             }}
             onClick={() => setSelectedEvent(null)}
           >
@@ -651,7 +652,7 @@ export default function Events() {
               style={{
                 width: "100%",
                 maxWidth: "900px",
-                maxHeight: "85vh",
+                maxHeight: "95vh",
                 background: "var(--color-bg-elevated)",
                 border: "1px solid rgba(255,255,255,0.08)",
                 borderRadius: "var(--radius-lg)",
@@ -685,12 +686,13 @@ export default function Events() {
               </button>
 
               <div
+                className="mobile-stack"
                 style={{
-                  padding: "2.5rem 2.5rem 1.5rem 2.5rem",
+                  padding: "clamp(1.2rem, 3vw, 2.5rem) clamp(1.2rem, 3vw, 2.5rem) 1.5rem clamp(1.2rem, 3vw, 2.5rem)",
                   borderBottom: "1px solid rgba(255,255,255,0.05)",
                   background: "rgba(0,0,0,0.2)",
                   display: "flex",
-                  gap: "1.5rem",
+                  gap: "clamp(0.8rem, 2vw, 1.5rem)",
                   alignItems: "center",
                 }}
               >
@@ -703,7 +705,7 @@ export default function Events() {
                     border: "1px solid rgba(255,255,255,0.1)",
                   }}
                 />
-                <div>
+                <div className="mobile-text-left">
                   <div
                     style={{
                       display: "flex",
@@ -753,7 +755,7 @@ export default function Events() {
               </div>
 
               <div
-                style={{ padding: "2rem 2.5rem", flex: 1, overflowY: "auto" }}
+                style={{ padding: "clamp(1rem, 2.5vw, 2rem) clamp(1rem, 2.5vw, 2.5rem)", flex: 1, overflowY: "auto" }}
               >
                 {leaderboardData.loading ? (
                   <div
@@ -816,7 +818,8 @@ export default function Events() {
                       <div
                         style={{
                           display: "flex",
-                          gap: "1.5rem",
+                          gap: "clamp(0.5rem, 2vw, 1.5rem)",
+                          flexWrap: "wrap",
                           borderBottom: "1px solid rgba(255,255,255,0.05)",
                           marginBottom: "1.5rem",
                           paddingBottom: "0.2rem",
@@ -1237,10 +1240,13 @@ export default function Events() {
                                             color:
                                               "var(--color-accent-primary)",
                                             background: "rgba(225,6,0,0.1)",
-                                            padding: "0.2rem 0.6rem",
+                                            padding: "0.2rem 0.5rem",
                                             borderRadius: "4px",
                                             border:
                                               "1px solid rgba(225,6,0,0.2)",
+                                            fontSize: "0.8rem",
+                                            whiteSpace: "nowrap",
+                                            display: "inline-block",
                                           }}
                                         >
                                           +{row.points} PTS

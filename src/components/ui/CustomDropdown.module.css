@@ -1,0 +1,22 @@
+.dropdownTrigger {
+  padding: 1rem 3rem 1rem 1.5rem;
+  font-size: 1.2rem;
+  min-width: 200px;
+}
+
+.dropdownItem {
+  padding: 1rem 1.5rem;
+  font-size: 1.1rem;
+}
+
+@media (max-width: 768px) {
+  .dropdownTrigger {
+    padding: 0.6rem 2.2rem 0.6rem 1rem !important;
+    font-size: 0.9rem !important;
+    min-width: 140px !important;
+  }
+  .dropdownItem {
+    padding: 0.7rem 1rem !important;
+    font-size: 0.85rem !important;
+  }
+}

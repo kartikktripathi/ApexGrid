@@ -424,9 +424,9 @@ export default function DriverProfile() {
     >
       {/* 1. HERO HEADER */}
       <section
+        className="profile-header"
         style={{
           position: "relative",
-          padding: "12vw 5vw 6vw 5vw",
           overflow: "hidden",
           borderBottom: "1px solid var(--color-border)",
           background:
@@ -454,8 +454,8 @@ export default function DriverProfile() {
           onClick={() => navigate("/drivers")}
           style={{
             position: "absolute",
-            top: "8vw",
-            left: "5vw",
+            top: "clamp(1.5rem, 6vw, 3rem)",
+            left: "clamp(1rem, 5vw, 3rem)",
             zIndex: 30,
             display: "flex",
             alignItems: "center",
@@ -518,7 +518,7 @@ export default function DriverProfile() {
               flexDirection: "column",
               gap: "1rem",
               flex: 1,
-              minWidth: "300px",
+              minWidth: "min(100%, 300px)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -1276,9 +1276,9 @@ export default function DriverProfile() {
           {/* Left Timeline (F1 Teams Driven For) */}
           <div
             style={{
-              flex: "1 1 350px",
+              flex: "1 1 clamp(280px, 40vw, 350px)",
               position: "relative",
-              paddingLeft: "4rem",
+              paddingLeft: "clamp(2rem, 5vw, 4rem)",
             }}
           >
             <span
@@ -1370,7 +1370,7 @@ export default function DriverProfile() {
                 <div
                   style={{
                     position: "absolute",
-                    left: "-2.5rem",
+                    left: "clamp(-2.5rem, -5vw, -1.2rem)",
                     top: "10px",
                     bottom: "10px",
                     width: "2px",
@@ -1381,7 +1381,7 @@ export default function DriverProfile() {
                 <motion.div
                   style={{
                     position: "absolute",
-                    left: "-2.5rem",
+                    left: "clamp(-2.5rem, -5vw, -1.2rem)",
                     top: "10px",
                     bottom: "10px",
                     width: "2px",
@@ -1404,7 +1404,7 @@ export default function DriverProfile() {
                     <div
                       style={{
                         position: "absolute",
-                        left: "-3rem",
+                        left: "clamp(-3rem, -6vw, -1.5rem)",
                         top: "6px",
                         width: "18px",
                         height: "18px",
@@ -1478,9 +1478,9 @@ export default function DriverProfile() {
           {/* Right Column (Career F1 Summary) */}
           <div
             style={{
-              flex: "1 1 350px",
+              flex: "1 1 clamp(280px, 40vw, 350px)",
               background: "var(--color-bg-panel)",
-              padding: "3.5rem",
+              padding: "clamp(1.2rem, 3.5vw, 3.5rem)",
               borderRadius: "var(--radius-lg)",
               border: "1px solid var(--color-border)",
               position: "relative",
@@ -1523,6 +1523,7 @@ export default function DriverProfile() {
 
             {!careerStats ? (
               <div
+                className="mobile-grid-1col"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
@@ -1570,6 +1571,7 @@ export default function DriverProfile() {
               </div>
             ) : (
               <div
+                className="mobile-grid-1col"
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr 1fr",
@@ -1631,7 +1633,7 @@ export default function DriverProfile() {
                     </span>
                     <span
                       style={{
-                        fontSize: idx === 0 || idx === 5 ? "4rem" : "2.8rem",
+                        fontSize: idx === 0 || idx === 5 ? "clamp(2.5rem, 8vw, 4rem)" : "clamp(1.8rem, 6vw, 2.8rem)",
                         fontFamily: "var(--font-heading)",
                         fontWeight: 800,
                         color: stat.color,

@@ -39,8 +39,8 @@ export function ConstructorHero({ team, dominancePercentage }) {
           : "var(--color-border)",
         borderRadius: "var(--radius-lg)",
         overflow: "hidden",
-        minHeight: "400px",
-        padding: "3rem",
+        minHeight: "clamp(300px, 45vh, 400px)",
+        padding: "clamp(1.2rem, 4vw, 3rem)",
         boxShadow: isHovered
           ? `0 0 40px ${teamColor}15`
           : "inset 0 0 100px rgba(0,0,0,0.8)",
@@ -74,6 +74,7 @@ export function ConstructorHero({ team, dominancePercentage }) {
 
       {/* Top Section */}
       <div
+        className="mobile-stack"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -104,7 +105,7 @@ export function ConstructorHero({ team, dominancePercentage }) {
           >
             {team?.team_name || "Constructor"}
           </h2>
-          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem" }}>
+          <div style={{ display: "flex", gap: "1rem", marginTop: "1rem", flexWrap: "wrap" }}>
             {team?.drivers?.map((d, i) => (
               <span
                 key={i}
@@ -121,7 +122,7 @@ export function ConstructorHero({ team, dominancePercentage }) {
           </div>
         </div>
 
-        <div style={{ textAlign: "right" }}>
+        <div className="mobile-text-left" style={{ textAlign: "right" }}>
           <div
             style={{
               fontSize: "clamp(4rem, 8vw, 6rem)",
@@ -147,6 +148,7 @@ export function ConstructorHero({ team, dominancePercentage }) {
 
       {/* Bottom Section - Telemetry & Stats */}
       <div
+        className="mobile-stack"
         style={{
           marginTop: "auto",
           display: "flex",
@@ -218,6 +220,7 @@ export function PerformanceBarRow({ team, rank }) {
       whileInView={{ opacity: 1, x: 0 }}
       viewport={{ once: true, margin: "-50px" }}
       transition={{ duration: 0.5, delay: rank * 0.05 }}
+      className="mobile-no-padding"
       style={{
         display: "flex",
         flexDirection: "column",
@@ -255,48 +258,52 @@ export function PerformanceBarRow({ team, rank }) {
           alignItems: "center",
         }}
       >
-        <div style={{ display: "flex", alignItems: "center", gap: "1.5rem" }}>
+        <div style={{ display: "flex", alignItems: "center", gap: "clamp(0.5rem, 2vw, 1.5rem)", flex: 1 }}>
           <div
             style={{
               fontFamily: "var(--font-heading)",
               fontSize: "1.2rem",
               color: "var(--color-text-muted)",
               width: "30px",
+              flexShrink: 0,
             }}
           >
             P{rank}
           </div>
-          <div
-            style={{
-              fontSize: "1.5rem",
-              fontFamily: "var(--font-heading)",
-              color: isHovered ? "#fff" : "var(--color-text-primary)",
-            }}
-          >
-            {team.team_name}
-          </div>
-          <div
-            style={{
-              fontSize: "0.85rem",
-              color: "var(--color-text-secondary)",
-              textTransform: "uppercase",
-              letterSpacing: "0.1em",
-              display: "flex",
-              gap: "0.5rem",
-            }}
-          >
-            {team.drivers?.map((d, i) => (
-              <span
-                key={i}
-                style={{
-                  background: "rgba(255,255,255,0.05)",
-                  padding: "2px 8px",
-                  borderRadius: "4px",
-                }}
-              >
-                {d}
-              </span>
-            ))}
+          <div style={{ display: "flex", flexDirection: "column", gap: "0.4rem", flex: 1 }}>
+            <div
+              style={{
+                fontSize: "clamp(1.1rem, 3vw, 1.5rem)",
+                fontFamily: "var(--font-heading)",
+                color: isHovered ? "#fff" : "var(--color-text-primary)",
+              }}
+            >
+              {team.team_name}
+            </div>
+            <div
+              style={{
+                fontSize: "0.85rem",
+                color: "var(--color-text-secondary)",
+                textTransform: "uppercase",
+                letterSpacing: "0.1em",
+                display: "flex",
+                gap: "0.5rem",
+                flexWrap: "wrap",
+              }}
+            >
+              {team.drivers?.map((d, i) => (
+                <span
+                  key={i}
+                  style={{
+                    background: "rgba(255,255,255,0.05)",
+                    padding: "2px 8px",
+                    borderRadius: "4px",
+                  }}
+                >
+                  {d}
+                </span>
+              ))}
+            </div>
           </div>
         </div>
         <div style={{ display: "flex", alignItems: "baseline", gap: "0.5rem" }}>

@@ -324,7 +324,7 @@ function HeroSection({ scrollYProgress, onExplore }) {
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 1, ease: [0.16, 1, 0.3, 1] }}
           style={{
-            fontSize: "clamp(3.5rem, 8vw, 9rem)",
+            fontSize: "clamp(2rem, 8vw, 9rem)",
             lineHeight: 0.85,
             margin: 0,
             maxWidth: "1200px",
@@ -447,6 +447,7 @@ function StandingsSection({ drivers, loading }) {
               whileInView={{ opacity: 1, y: 0 }}
               viewport={{ once: true, margin: "-100px" }}
               transition={{ duration: 0.5, delay: i * 0.1 }}
+              className="mobile-no-padding"
               style={{
                 display: "flex",
                 alignItems: "center",
@@ -581,6 +582,7 @@ function CalendarSection({ races, loading }) {
                 whileInView={{ opacity: 1, x: 0 }}
                 viewport={{ once: true, margin: "-50px" }}
                 transition={{ duration: 0.6, delay: i * 0.1 }}
+                className="mobile-stack"
                 style={{
                   display: "flex",
                   borderBottom: "1px solid var(--color-border)",
@@ -620,6 +622,7 @@ function CalendarSection({ races, loading }) {
                 </div>
 
                 <div
+                  className="mobile-no-border"
                   style={{
                     flex: 1,
                     borderLeft: "1px solid rgba(255,255,255,0.05)",
@@ -644,6 +647,7 @@ function CalendarSection({ races, loading }) {
                 {/* Dynamic Circuit Figure fetched from API */}
                 {r.image && (
                   <div
+                    className="mobile-hide-watermark"
                     style={{
                       position: "absolute",
                       right: "0",
@@ -676,6 +680,7 @@ function StandingsSkeleton() {
       {[1, 2, 3, 4, 5].map((item) => (
         <div
           key={item}
+          className="mobile-no-padding"
           style={{
             display: "flex",
             alignItems: "center",
@@ -759,6 +764,7 @@ function CalendarSkeleton() {
       {[1, 2, 3, 4, 5].map((item) => (
         <div
           key={item}
+          className="mobile-stack"
           style={{
             display: "flex",
             borderBottom: "1px solid var(--color-border)",
@@ -807,6 +813,7 @@ function CalendarSkeleton() {
             />
           </div>
           <div
+            className="mobile-no-border"
             style={{
               flex: 1,
               borderLeft: "1px solid rgba(255,255,255,0.05)",
@@ -998,6 +1005,7 @@ function NextRaceSection({ nextEvent, navigate }) {
       />
 
       <div
+        className="mobile-stack"
         style={{
           display: "flex",
           justifyContent: "space-between",
@@ -1053,7 +1061,7 @@ function NextRaceSection({ nextEvent, navigate }) {
         <div
           style={{
             flex: "1",
-            minWidth: "320px",
+            minWidth: "min(100%, 320px)",
             display: "flex",
             flexDirection: "column",
             gap: "2.5rem",
@@ -1197,7 +1205,7 @@ function NextRaceSection({ nextEvent, navigate }) {
                   {/* Days */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 6rem)",
+                      fontSize: "clamp(2rem, 7vw, 5rem)",
                       fontFamily: "var(--font-heading)",
                       color: "#fff",
                       fontWeight: 700,
@@ -1208,11 +1216,11 @@ function NextRaceSection({ nextEvent, navigate }) {
                   </span>
                   <span
                     style={{
-                      fontSize: "1.2rem",
+                      fontSize: "clamp(0.8rem, 2vw, 1.2rem)",
                       color: "var(--color-text-secondary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
-                      marginRight: "2rem",
+                      marginRight: "clamp(0.5rem, 3vw, 2rem)",
                       letterSpacing: "0.05em",
                     }}
                   >
@@ -1222,7 +1230,7 @@ function NextRaceSection({ nextEvent, navigate }) {
                   {/* Hours */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 6rem)",
+                      fontSize: "clamp(2rem, 7vw, 5rem)",
                       fontFamily: "var(--font-heading)",
                       color: "#fff",
                       fontWeight: 700,
@@ -1233,11 +1241,11 @@ function NextRaceSection({ nextEvent, navigate }) {
                   </span>
                   <span
                     style={{
-                      fontSize: "1.2rem",
+                      fontSize: "clamp(0.8rem, 2vw, 1.2rem)",
                       color: "var(--color-text-secondary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
-                      marginRight: "2rem",
+                      marginRight: "clamp(0.5rem, 3vw, 2rem)",
                       letterSpacing: "0.05em",
                     }}
                   >
@@ -1247,7 +1255,7 @@ function NextRaceSection({ nextEvent, navigate }) {
                   {/* Minutes */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 6rem)",
+                      fontSize: "clamp(2rem, 7vw, 5rem)",
                       fontFamily: "var(--font-heading)",
                       color: "#fff",
                       fontWeight: 700,
@@ -1258,11 +1266,11 @@ function NextRaceSection({ nextEvent, navigate }) {
                   </span>
                   <span
                     style={{
-                      fontSize: "1.2rem",
+                      fontSize: "clamp(0.8rem, 2vw, 1.2rem)",
                       color: "var(--color-text-secondary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
-                      marginRight: "2rem",
+                      marginRight: "clamp(0.5rem, 3vw, 2rem)",
                       letterSpacing: "0.05em",
                     }}
                   >
@@ -1272,7 +1280,7 @@ function NextRaceSection({ nextEvent, navigate }) {
                   {/* Seconds */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 6rem)",
+                      fontSize: "clamp(2rem, 7vw, 5rem)",
                       fontFamily: "var(--font-heading)",
                       color: "var(--color-accent-primary)",
                       fontWeight: 700,
@@ -1283,7 +1291,7 @@ function NextRaceSection({ nextEvent, navigate }) {
                   </span>
                   <span
                     style={{
-                      fontSize: "1.2rem",
+                      fontSize: "clamp(0.8rem, 2vw, 1.2rem)",
                       color: "var(--color-accent-primary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
@@ -1329,6 +1337,7 @@ function NextRaceSection({ nextEvent, navigate }) {
       {/* Styled circuit background watermark */}
       {meeting.circuit_image && (
         <div
+          className="mobile-hide-watermark"
           style={{
             position: "absolute",
             right: "5%",
@@ -1563,7 +1572,7 @@ function NextRaceSkeleton() {
             </div>
 
             <div
-              style={{ display: "flex", gap: "2rem", alignItems: "baseline" }}
+              style={{ display: "flex", gap: "clamp(0.5rem, 3vw, 2rem)", alignItems: "baseline", flexWrap: "wrap" }}
             >
               {[1, 2, 3, 4].map((i) => (
                 <div

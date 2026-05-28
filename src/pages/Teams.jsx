@@ -160,8 +160,8 @@ export default function Teams() {
     >
       {/* PAGE HEADER - Strategic/Technical Vibe */}
       <div
+        className="teams-header"
         style={{
-          padding: "6vw 5vw 3vw 5vw",
           position: "relative",
           zIndex: 20,
           borderBottom: "1px solid rgba(255,255,255,0.05)",

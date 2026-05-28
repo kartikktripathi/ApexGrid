@@ -25,7 +25,7 @@ export function FeaturedDriverCard({ driver, rank }) {
 
   // Asymmetrical sizing: 1st place gets more visual weight
   const isFirst = rank === 1;
-  const height = isFirst ? "400px" : "300px";
+  const height = isFirst ? "clamp(320px, 45vh, 400px)" : "clamp(240px, 35vh, 300px)";
 
   return (
     <motion.div
@@ -74,7 +74,7 @@ export function FeaturedDriverCard({ driver, rank }) {
           position: "absolute",
           top: isFirst ? "-20%" : "-10%",
           right: isFirst ? "5%" : "-10%",
-          fontSize: isFirst ? "30rem" : "16rem",
+          fontSize: isFirst ? "clamp(12rem, 30vw, 30rem)" : "clamp(8rem, 16vw, 16rem)",
           fontFamily: "var(--font-heading)",
           fontWeight: 800,
           color: "rgba(255,255,255,0.03)",
@@ -133,7 +133,7 @@ export function FeaturedDriverCard({ driver, rank }) {
           bottom: 0,
           left: 0,
           right: 0,
-          padding: "2.5rem",
+          padding: "clamp(1.2rem, 4vw, 2.5rem)",
           zIndex: 4,
           display: "flex",
           flexDirection: "column",
@@ -162,7 +162,7 @@ export function FeaturedDriverCard({ driver, rank }) {
         <h3
           style={{
             margin: 0,
-            fontSize: isFirst ? "4rem" : "2.5rem",
+            fontSize: isFirst ? "clamp(1.8rem, 5vw, 4rem)" : "clamp(1.5rem, 4vw, 2.5rem)",
             fontFamily: "var(--font-heading)",
             lineHeight: 0.9,
           }}
@@ -201,7 +201,7 @@ export function FeaturedDriverCard({ driver, rank }) {
           <div>
             <span
               style={{
-                fontSize: isFirst ? "3rem" : "2rem",
+                fontSize: isFirst ? "clamp(2rem, 5vw, 3rem)" : "clamp(1.5rem, 3vw, 2rem)",
                 fontFamily: "var(--font-heading)",
                 fontWeight: 600,
                 color: teamColor,
@@ -267,7 +267,7 @@ export function LeaderboardRow({ driver, rank }) {
       style={{
         display: "flex",
         alignItems: "center",
-        padding: "1.2rem 2rem",
+        padding: "clamp(0.8rem, 2vw, 1.2rem) clamp(1rem, 3vw, 2rem)",
         background: isHovered ? "var(--color-bg-elevated)" : "transparent",
         border: "1px solid",
         borderColor: isHovered
@@ -296,7 +296,7 @@ export function LeaderboardRow({ driver, rank }) {
 
       <div
         style={{
-          flex: "0 0 60px",
+          flex: "0 0 clamp(30px, 8vw, 60px)",
           fontFamily: "var(--font-heading)",
           fontSize: "1.5rem",
           color: isHovered
@@ -313,13 +313,13 @@ export function LeaderboardRow({ driver, rank }) {
           flex: "1",
           display: "flex",
           alignItems: "center",
-          gap: "2rem",
+          gap: "clamp(0.8rem, 2vw, 2rem)",
         }}
       >
         <div style={{ flex: "1" }}>
           <span
             style={{
-              fontSize: "1.3rem",
+              fontSize: "clamp(1rem, 3vw, 1.3rem)",
               fontFamily: "var(--font-heading)",
               fontWeight: 600,
               display: "block",
@@ -345,7 +345,7 @@ export function LeaderboardRow({ driver, rank }) {
           display: "flex",
           alignItems: "flex-end",
           gap: "0.5rem",
-          flex: "0 0 100px",
+          flex: "0 0 clamp(70px, 12vw, 100px)",
           justifyContent: "flex-end",
         }}
       >

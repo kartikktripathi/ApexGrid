@@ -307,8 +307,9 @@ export default function MeetingCard({
 
       {/* Main Content */}
       <div
+        className={!isSmall ? "mobile-stack" : ""}
         style={{
-          padding: isSmall ? "1.5rem" : "2.5rem",
+          padding: isSmall ? "1.5rem" : "clamp(1.2rem, 3vw, 2.5rem)",
           display: "flex",
           flexDirection: isSmall ? "column" : "row",
           gap: isSmall ? "1.2rem" : "2rem",
@@ -342,75 +343,100 @@ export default function MeetingCard({
             </div>
           </div>
         ) : (
-          /* Large Variant Flag & Date Col */
-          <div
-            style={{
-              display: "flex",
-              flexDirection: "column",
-              gap: "1rem",
-              flex: "0 0 120px",
-            }}
-          >
-            <img
-              src={meeting.country_flag}
-              alt={meeting.country_name}
-              style={{
-                width: "60px",
-                borderRadius: "4px",
-                border: "1px solid rgba(255,255,255,0.1)",
-              }}
-            />
-            <div>
+          <>
+            {/* Mobile-only Date & Flag Row */}
+            <div className="mobile-show-only" style={{ alignItems: "center", gap: "0.75rem", marginBottom: "1rem" }}>
+              <img
+                src={meeting.country_flag}
+                alt={meeting.country_name}
+                style={{
+                  width: "36px",
+                  borderRadius: "3px",
+                  border: "1px solid rgba(255,255,255,0.1)",
+                }}
+              />
               <div
                 style={{
-                  fontSize: "1.5rem",
+                  fontSize: "1rem",
                   fontFamily: "var(--font-heading)",
                   color: "#fff",
-                  lineHeight: 1,
                 }}
               >
-                {startDate.split(" ")[0]}
-              </div>
-              <div
-                style={{
-                  fontSize: "0.9rem",
-                  color: "var(--color-text-muted)",
-                  textTransform: "uppercase",
-                }}
-              >
-                {startDate.split(" ")[1]}
+                {startDate} - {endDate}
               </div>
             </div>
+
+            {/* Large Variant Flag & Date Col (Desktop only) */}
             <div
+              className="mobile-hide-desktop-only"
               style={{
-                width: "1px",
-                height: "20px",
-                background: "rgba(255,255,255,0.2)",
-                marginLeft: "10px",
+                display: "flex",
+                flexDirection: "column",
+                gap: "1rem",
+                flex: "0 0 120px",
               }}
-            />
-            <div>
-              <div
+            >
+              <img
+                src={meeting.country_flag}
+                alt={meeting.country_name}
                 style={{
-                  fontSize: "1.5rem",
-                  fontFamily: "var(--font-heading)",
-                  color: "#fff",
-                  lineHeight: 1,
+                  width: "60px",
+                  borderRadius: "4px",
+                  border: "1px solid rgba(255,255,255,0.1)",
                 }}
-              >
-                {endDate.split(" ")[0]}
+              />
+              <div>
+                <div
+                  style={{
+                    fontSize: "1.5rem",
+                    fontFamily: "var(--font-heading)",
+                    color: "#fff",
+                    lineHeight: 1,
+                  }}
+                >
+                  {startDate.split(" ")[0]}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "var(--color-text-muted)",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {startDate.split(" ")[1]}
+                </div>
               </div>
               <div
                 style={{
-                  fontSize: "0.9rem",
-                  color: "var(--color-text-muted)",
-                  textTransform: "uppercase",
+                  width: "1px",
+                  height: "20px",
+                  background: "rgba(255,255,255,0.2)",
+                  marginLeft: "10px",
                 }}
-              >
-                {endDate.split(" ")[1]}
+              />
+              <div>
+                <div
+                  style={{
+                    fontSize: "1.5rem",
+                    fontFamily: "var(--font-heading)",
+                    color: "#fff",
+                    lineHeight: 1,
+                  }}
+                >
+                  {endDate.split(" ")[0]}
+                </div>
+                <div
+                  style={{
+                    fontSize: "0.9rem",
+                    color: "var(--color-text-muted)",
+                    textTransform: "uppercase",
+                  }}
+                >
+                  {endDate.split(" ")[1]}
+                </div>
               </div>
             </div>
-          </div>
+          </>
         )}
 
         {/* Meeting Info */}
@@ -475,7 +501,7 @@ export default function MeetingCard({
           )}
           <h2
             style={{
-              fontSize: isSmall ? "1.3rem" : "clamp(1.8rem, 4vw, 2.5rem)",
+              fontSize: isSmall ? "1.1rem" : "clamp(1.2rem, 2vw, 1.8rem)",
               fontFamily: "var(--font-heading)",
               margin: "0 0 0.4rem 0",
               textTransform: "uppercase",
@@ -488,6 +514,7 @@ export default function MeetingCard({
               .trim()}
           </h2>
           <div
+            className="mobile-stack"
             style={{
               display: "flex",
               flexDirection: isSmall ? "column" : "row",
@@ -606,7 +633,7 @@ export default function MeetingCard({
                   {/* Days */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 5rem)",
+                      fontSize: "clamp(2rem, 5vw, 3rem)",
                       fontFamily: "var(--font-heading)",
                       color: "#fff",
                       fontWeight: 600,
@@ -617,11 +644,11 @@ export default function MeetingCard({
                   </span>
                   <span
                     style={{
-                      fontSize: "clamp(1rem, 2vw, 1.2rem)",
+                      fontSize: "clamp(0.8rem, 1.5vw, 1rem)",
                       color: "var(--color-text-secondary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
-                      marginRight: "1.5rem",
+                      marginRight: "clamp(0.4rem, 2vw, 1rem)",
                       letterSpacing: "0.05em",
                     }}
                   >
@@ -631,7 +658,7 @@ export default function MeetingCard({
                   {/* Hours */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 5rem)",
+                      fontSize: "clamp(2rem, 5vw, 3rem)",
                       fontFamily: "var(--font-heading)",
                       color: "#fff",
                       fontWeight: 600,
@@ -642,11 +669,11 @@ export default function MeetingCard({
                   </span>
                   <span
                     style={{
-                      fontSize: "clamp(1rem, 2vw, 1.2rem)",
+                      fontSize: "clamp(0.8rem, 1.5vw, 1rem)",
                       color: "var(--color-text-secondary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
-                      marginRight: "1.5rem",
+                      marginRight: "clamp(0.4rem, 2vw, 1rem)",
                       letterSpacing: "0.05em",
                     }}
                   >
@@ -656,7 +683,7 @@ export default function MeetingCard({
                   {/* Minutes */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 5rem)",
+                      fontSize: "clamp(2rem, 5vw, 3rem)",
                       fontFamily: "var(--font-heading)",
                       color: "#fff",
                       fontWeight: 600,
@@ -667,11 +694,11 @@ export default function MeetingCard({
                   </span>
                   <span
                     style={{
-                      fontSize: "clamp(1rem, 2vw, 1.2rem)",
+                      fontSize: "clamp(0.8rem, 1.5vw, 1rem)",
                       color: "var(--color-text-secondary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
-                      marginRight: "1.5rem",
+                      marginRight: "clamp(0.4rem, 2vw, 1rem)",
                       letterSpacing: "0.05em",
                     }}
                   >
@@ -681,7 +708,7 @@ export default function MeetingCard({
                   {/* Seconds */}
                   <span
                     style={{
-                      fontSize: "clamp(3.5rem, 8vw, 5rem)",
+                      fontSize: "clamp(2rem, 5vw, 3rem)",
                       fontFamily: "var(--font-heading)",
                       color: "var(--color-accent-primary)",
                       fontWeight: 600,
@@ -692,7 +719,7 @@ export default function MeetingCard({
                   </span>
                   <span
                     style={{
-                      fontSize: "clamp(1rem, 2vw, 1.2rem)",
+                      fontSize: "clamp(0.8rem, 1.5vw, 1rem)",
                       color: "var(--color-accent-primary)",
                       textTransform: "uppercase",
                       fontFamily: "var(--font-body)",
@@ -845,7 +872,7 @@ export default function MeetingCard({
                 ) : (
                   /* Large Podium list */
                   <div
-                    style={{ display: "flex", gap: "3rem", flexWrap: "wrap" }}
+                    style={{ display: "flex", gap: "clamp(1rem, 3vw, 3rem)", flexWrap: "wrap" }}
                   >
                     {podium.map((driver, idx) => (
                       <div

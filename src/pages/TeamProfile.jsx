@@ -488,9 +488,9 @@ export default function TeamProfile() {
       }}
     >
       <section
+        className="profile-header"
         style={{
           position: "relative",
-          padding: "12vw 5vw 6vw 5vw",
           overflow: "hidden",
           borderBottom: "1px solid var(--color-border)",
           background:
@@ -516,8 +516,8 @@ export default function TeamProfile() {
           onClick={() => navigate("/teams")}
           style={{
             position: "absolute",
-            top: "8vw",
-            left: "5vw",
+            top: "clamp(1.5rem, 6vw, 3rem)",
+            left: "clamp(1rem, 5vw, 3rem)",
             zIndex: 30,
             display: "flex",
             alignItems: "center",
@@ -577,7 +577,7 @@ export default function TeamProfile() {
               flexDirection: "column",
               gap: "1rem",
               flex: 1,
-              minWidth: "300px",
+              minWidth: "min(100%, 300px)",
             }}
           >
             <div style={{ display: "flex", alignItems: "center", gap: "1rem" }}>
@@ -1245,11 +1245,13 @@ export default function TeamProfile() {
         ref={timelineRef}
         style={{ padding: "6vw 5vw", position: "relative" }}
       >
-        <div
+        <div style={{ maxWidth: "1000px", margin: "0 auto", position: "relative" }}>
+          <div
+            className="mobile-stack"
           style={{
             display: "flex",
             justifyContent: "space-between",
-            alignItems: "flex-end",
+            alignItems: "center",
             marginBottom: "5rem",
             borderBottom: "1px solid var(--color-border)",
             paddingBottom: "2rem",
@@ -1281,7 +1283,7 @@ export default function TeamProfile() {
             </h2>
           </div>
           {careerStats && (
-            <div style={{ display: "flex", gap: "3rem", flexWrap: "wrap" }}>
+            <div className="mobile-align-start" style={{ display: "flex", gap: "clamp(1rem, 3vw, 3rem)", flexWrap: "wrap" }}>
               <div>
                 <span
                   style={{
@@ -1422,7 +1424,7 @@ export default function TeamProfile() {
                   transition={{ duration: 0.5, delay: idx * 0.1 }}
                   style={{
                     display: "flex",
-                    gap: "3rem",
+                    gap: "clamp(1rem, 3vw, 3rem)",
                     position: "relative",
                     zIndex: 2,
                   }}
@@ -1503,7 +1505,7 @@ export default function TeamProfile() {
                     <div
                       style={{
                         display: "flex",
-                        gap: "3rem",
+                        gap: "clamp(1rem, 3vw, 3rem)",
                         alignItems: "center",
                       }}
                     >
@@ -1586,6 +1588,7 @@ export default function TeamProfile() {
             </div>
           </div>
         )}
+        </div>
       </section>
     </div>
   );

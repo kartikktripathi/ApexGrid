@@ -114,7 +114,8 @@ export default function Drivers() {
     >
       {/* PAGE HEADER */}
       <div
-        style={{ padding: "8vw 5vw 4vw 5vw", position: "relative", zIndex: 20 }}
+        className="page-header"
+        style={{ position: "relative", zIndex: 20 }}
       >
         <div
           style={{
@@ -195,7 +196,7 @@ export default function Drivers() {
               <div
                 style={{
                   display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(300px, 1fr))",
+                  gridTemplateColumns: "repeat(auto-fit, minmax(min(100%, 280px), 1fr))",
                   gap: "2rem",
                   alignItems: "flex-start",
                 }}
