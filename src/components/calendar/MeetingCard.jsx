@@ -81,7 +81,7 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
     return new Date(formatted);
   };
 
-  const localSessionString = useMemo(() => {
+  const localSessionData = useMemo(() => {
     if (isNextRace || !raceSession?.date_start) return null;
     const localDate = parseUtcDate(raceSession.date_start);
     if (!localDate || isNaN(localDate.getTime())) return null;
@@ -90,7 +90,7 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
     const timeString = localDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
     const tzString = localDate.toLocaleDateString(undefined, { timeZoneName: 'short' }).split(', ').pop();
     
-    return `${dateString} • ${timeString} (${tzString})`;
+    return { dateString, timeString, tzString };
   }, [isNextRace, raceSession]);
 
   return (
@@ -208,20 +208,26 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
 
         {/* Meeting Info */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
-          {localSessionString && (
+          {localSessionData && (
             <div style={{
               fontSize: isSmall ? '0.7rem' : '0.8rem',
-              color: 'var(--color-accent-secondary)',
-              fontFamily: 'var(--font-mono, monospace)',
+              color: 'var(--color-text-secondary)',
+              fontFamily: 'var(--font-body)',
               textTransform: 'uppercase',
               letterSpacing: '0.05em',
               marginBottom: '0.4rem',
               display: 'flex',
               alignItems: 'center',
-              gap: '0.35rem'
+              gap: '0.4rem',
+              flexWrap: 'wrap'
             }}>
-              <svg width={isSmall ? "10" : "12"} height={isSmall ? "10" : "12"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
-              Session Start: {localSessionString}
+              <svg width={isSmall ? "10" : "12"} height={isSmall ? "10" : "12"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" style={{ color: 'var(--color-text-muted)' }}><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              <span style={{ color: 'var(--color-text-muted)' }}>{isSmall ? 'Sprint Start:' : 'GP Start:'}</span>
+              <span>{localSessionData.dateString}</span>
+              <span style={{ color: 'rgba(255,255,255,0.15)' }}>•</span>
+              <span style={{ color: '#ffffff', fontFamily: 'var(--font-heading)', fontWeight: 600, letterSpacing: '0.02em' }}>
+                {localSessionData.timeString} <span style={{ fontSize: '80%', opacity: 0.5, fontWeight: 500 }}>{localSessionData.tzString}</span>
+              </span>
             </div>
           )}
           <h2 style={{
