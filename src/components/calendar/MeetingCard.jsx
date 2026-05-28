@@ -331,46 +331,38 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
                   🏎️ RACE IS LIVE
                 </div>
               ) : (
-                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
                   {/* Days */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
-                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
-                      {String(timeLeft.days).padStart(2, '0')}
-                    </span>
-                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
-                      Days
-                    </span>
-                  </div>
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 5rem)', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+                    {String(timeLeft.days).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', marginRight: '1.5rem', letterSpacing: '0.05em' }}>
+                    d
+                  </span>
 
                   {/* Hours */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
-                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
-                      {String(timeLeft.hours).padStart(2, '0')}
-                    </span>
-                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
-                      Hrs
-                    </span>
-                  </div>
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 5rem)', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+                    {String(timeLeft.hours).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', marginRight: '1.5rem', letterSpacing: '0.05em' }}>
+                    h
+                  </span>
 
                   {/* Minutes */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
-                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
-                      {String(timeLeft.minutes).padStart(2, '0')}
-                    </span>
-                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
-                      Mins
-                    </span>
-                  </div>
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 5rem)', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+                    {String(timeLeft.minutes).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', marginRight: '1.5rem', letterSpacing: '0.05em' }}>
+                    m
+                  </span>
 
                   {/* Seconds */}
-                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
-                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: 'var(--color-accent-primary)', fontWeight: 600, lineHeight: 1 }}>
-                      {String(timeLeft.seconds).padStart(2, '0')}
-                    </span>
-                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
-                      Secs
-                    </span>
-                  </div>
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 5rem)', fontFamily: 'var(--font-heading)', color: 'var(--color-accent-primary)', fontWeight: 600, lineHeight: 1 }}>
+                    {String(timeLeft.seconds).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: 'clamp(1rem, 2vw, 1.2rem)', color: 'var(--color-accent-primary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', letterSpacing: '0.05em' }}>
+                    s
+                  </span>
                 </div>
               )}
             </div>
