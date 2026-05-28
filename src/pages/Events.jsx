@@ -1,4 +1,5 @@
 import React, { useState, useEffect, useMemo } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { motion, AnimatePresence } from 'framer-motion';
 import { f1Api } from '../utils/api';
 import { jolpicaApi } from '../utils/jolpicaApi';
@@ -6,8 +7,10 @@ import LoadingState from '../components/ui/LoadingState';
 import ErrorState from '../components/ui/ErrorState';
 import MeetingCard from '../components/calendar/MeetingCard';
 import CustomDropdown from '../components/ui/CustomDropdown';
+import { getDriverSlug } from '../components/driver/DriverCard';
 
 export default function Events() {
+  const navigate = useNavigate();
   const [selectedYear, setSelectedYear] = useState(() => new Date().getFullYear());
   const [meetings, setMeetings] = useState([]);
   const [raceSessions, setRaceSessions] = useState([]);
@@ -633,7 +636,18 @@ export default function Events() {
                                 {/* Driver Name */}
                                 <td style={{ padding: '1rem', color: '#fff' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-                                    <span style={{ fontWeight: 600 }}>{driver.givenName} {driver.familyName}</span>
+                                    <span 
+                                      onClick={() => navigate(`/drivers/${getDriverSlug(driver.givenName, driver.familyName)}`)}
+                                      style={{ 
+                                        fontWeight: 600, 
+                                        cursor: 'pointer',
+                                        transition: 'color 0.2s'
+                                      }}
+                                      onMouseEnter={(e) => e.target.style.color = 'var(--color-accent-primary)'}
+                                      onMouseLeave={(e) => e.target.style.color = '#fff'}
+                                    >
+                                      {driver.givenName} {driver.familyName}
+                                    </span>
                                     {driver.code && (
                                       <span style={{ fontSize: '0.75rem', background: 'rgba(255,255,255,0.08)', padding: '0.1rem 0.4rem', borderRadius: '3px', color: 'var(--color-text-secondary)', fontFamily: 'var(--font-mono)' }}>
                                         {driver.code}
