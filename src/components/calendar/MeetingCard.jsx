@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { motion } from 'framer-motion';
 import { f1Api } from '../../utils/api';
 
@@ -71,6 +71,27 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
   const statusText = isCancelled ? 'CANCELLED' : isNextRace ? 'UPCOMING' : isCompleted ? 'COMPLETED' : 'SCHEDULED';
 
   const isSmall = variant === 'small';
+
+  const parseUtcDate = (dateStr) => {
+    if (!dateStr) return null;
+    let formatted = dateStr;
+    if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.match(/-\d{2}:\d{2}$/)) {
+      formatted = dateStr + 'Z';
+    }
+    return new Date(formatted);
+  };
+
+  const localSessionString = useMemo(() => {
+    if (isNextRace || !raceSession?.date_start) return null;
+    const localDate = parseUtcDate(raceSession.date_start);
+    if (!localDate || isNaN(localDate.getTime())) return null;
+
+    const dateString = localDate.toLocaleDateString(undefined, { weekday: 'short', day: 'numeric', month: 'short' });
+    const timeString = localDate.toLocaleTimeString(undefined, { hour: '2-digit', minute: '2-digit', hour12: false });
+    const tzString = localDate.toLocaleDateString(undefined, { timeZoneName: 'short' }).split(', ').pop();
+    
+    return `${dateString} • ${timeString} (${tzString})`;
+  }, [isNextRace, raceSession]);
 
   return (
     <motion.div
@@ -187,6 +208,22 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
 
         {/* Meeting Info */}
         <div style={{ flex: 1, display: 'flex', flexDirection: 'column', justifyContent: 'center' }}>
+          {localSessionString && (
+            <div style={{
+              fontSize: isSmall ? '0.7rem' : '0.8rem',
+              color: 'var(--color-accent-secondary)',
+              fontFamily: 'var(--font-mono, monospace)',
+              textTransform: 'uppercase',
+              letterSpacing: '0.05em',
+              marginBottom: '0.4rem',
+              display: 'flex',
+              alignItems: 'center',
+              gap: '0.35rem'
+            }}>
+              <svg width={isSmall ? "10" : "12"} height={isSmall ? "10" : "12"} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><polyline points="12 6 12 12 16 14"></polyline></svg>
+              Session Start: {localSessionString}
+            </div>
+          )}
           <h2 style={{
             fontSize: isSmall ? '1.3rem' : 'clamp(1.8rem, 4vw, 2.5rem)',
             fontFamily: 'var(--font-heading)',
