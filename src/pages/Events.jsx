@@ -108,11 +108,14 @@ export default function Events() {
   const nextEventData = useMemo(() => {
     if (!meetings.length) return null;
     const now = new Date();
+    // Allow sessions that started up to 2 hours ago
+    const thresholdTime = now.getTime() - 2 * 60 * 60 * 1000;
     const futureSessions = [];
 
     // Check race sessions
     raceSessions.forEach(session => {
-      if (new Date(session.date_start) > now) {
+      const sessionStart = new Date(session.date_start).getTime();
+      if (sessionStart > thresholdTime) {
         const meeting = meetings.find(m => m.meeting_key === session.meeting_key);
         if (meeting) {
           futureSessions.push({
@@ -128,7 +131,8 @@ export default function Events() {
 
     // Check sprint sessions
     sprintSessions.forEach(session => {
-      if (new Date(session.date_start) > now) {
+      const sessionStart = new Date(session.date_start).getTime();
+      if (sessionStart > thresholdTime) {
         const meeting = meetings.find(m => m.meeting_key === session.meeting_key);
         if (meeting) {
           futureSessions.push({

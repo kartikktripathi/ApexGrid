@@ -84,8 +84,13 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
       const now = new Date();
       const difference = targetDate - now;
 
+      // 2 hours in ms = 2 * 60 * 60 * 1000 = 7,200,000
       if (difference <= 0) {
-        return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true };
+        if (difference >= -7200000) {
+          return { total: difference, days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true, isOver: false };
+        } else {
+          return { total: difference, days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false, isOver: true };
+        }
       }
 
       return {
@@ -94,7 +99,8 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
         hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
         minutes: Math.floor((difference / 1000 / 60) % 60),
         seconds: Math.floor((difference / 1000) % 60),
-        isLive: false
+        isLive: false,
+        isOver: false
       };
     };
 
@@ -321,14 +327,30 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
               </div>
 
               {timeLeft.isLive ? (
-                <div style={{
-                  fontSize: '1.4rem',
-                  fontFamily: 'var(--font-heading)',
-                  color: 'var(--color-accent-secondary)',
-                  textTransform: 'uppercase',
-                  letterSpacing: '0.1em'
-                }}>
-                  🏎️ RACE IS LIVE
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{
+                    fontSize: '1.4rem',
+                    fontFamily: 'var(--font-heading)',
+                    color: 'var(--color-accent-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em'
+                  }}>
+                    🏎️ RACE IS LIVE
+                  </div>
+                  <div style={{
+                    fontSize: '1.2rem',
+                    fontFamily: 'var(--font-heading)',
+                    color: 'var(--color-accent-primary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.1em',
+                    fontWeight: 600,
+                  }}>
+                    LIGHTS OUT! RACING ON!
+                  </div>
+                </div>
+              ) : timeLeft.isOver ? (
+                <div style={{ fontSize: '1.2rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-heading)' }}>
+                  Session Completed
                 </div>
               ) : (
                 <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
