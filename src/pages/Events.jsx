@@ -599,6 +599,7 @@ export default function Events() {
                             ) : (
                               <>
                                 <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>Grid</th>
+                                <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>Move</th>
                                 <th style={{ padding: '0.8rem 1rem', textAlign: 'center' }}>Points</th>
                                 <th style={{ padding: '0.8rem 1rem', textAlign: 'right' }}>Time/Status</th>
                               </>
@@ -661,6 +662,42 @@ export default function Events() {
                                     {/* Starting Grid */}
                                     <td style={{ padding: '1rem', textAlign: 'center', color: 'var(--color-text-secondary)' }}>
                                       {row.grid === "0" ? 'Pit Lane' : row.grid}
+                                    </td>
+
+                                    {/* Position Movement */}
+                                    <td style={{ padding: '1rem', textAlign: 'center' }}>
+                                      {(() => {
+                                        const gridPos = parseInt(row.grid, 10);
+                                        const finishPos = parseInt(row.position, 10);
+                                        
+                                        if (isNaN(gridPos) || isNaN(finishPos)) {
+                                          return <span style={{ color: 'var(--color-text-muted)' }}>—</span>;
+                                        }
+
+                                        // If started from Pit Lane (grid 0), treat as starting 20th
+                                        const effectiveGridPos = gridPos === 0 ? 20 : gridPos;
+                                        const diff = effectiveGridPos - finishPos;
+
+                                        if (diff > 0) {
+                                          return (
+                                            <span style={{ color: '#00e676', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
+                                              ▲ {diff}
+                                            </span>
+                                          );
+                                        } else if (diff < 0) {
+                                          return (
+                                            <span style={{ color: 'var(--color-accent-primary)', fontWeight: 600, display: 'inline-flex', alignItems: 'center', gap: '0.25rem', fontSize: '0.85rem' }}>
+                                              ▼ {Math.abs(diff)}
+                                            </span>
+                                          );
+                                        } else {
+                                          return (
+                                            <span style={{ color: 'var(--color-text-muted)', fontWeight: 500, fontSize: '0.85rem' }}>
+                                              —
+                                            </span>
+                                          );
+                                        }
+                                      })()}
                                     </td>
 
                                     {/* Points */}
