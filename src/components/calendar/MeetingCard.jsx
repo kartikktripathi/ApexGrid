@@ -6,6 +6,7 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
   const [podium, setPodium] = useState(null);
   const [loadingWinner, setLoadingWinner] = useState(false);
   const [inView, setInView] = useState(false);
+  const [timeLeft, setTimeLeft] = useState(null);
 
   const isCancelled = meeting.is_cancelled === true;
   const isCompleted = !isCancelled && raceSession && new Date(raceSession.date_start) < new Date();
@@ -63,6 +64,48 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
       if (timerId) clearTimeout(timerId);
     };
   }, [isCompleted, raceSession, index, meeting.meeting_name, inView, podium]);
+
+  useEffect(() => {
+    if (!isNextRace || !raceSession?.date_start) return;
+
+    const parseUtcDate = (dateStr) => {
+      if (!dateStr) return null;
+      let formatted = dateStr;
+      if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.match(/-\d{2}:\d{2}$/)) {
+        formatted = dateStr + 'Z';
+      }
+      return new Date(formatted);
+    };
+
+    const targetDate = parseUtcDate(raceSession.date_start);
+    if (!targetDate || isNaN(targetDate.getTime())) return;
+
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const difference = targetDate - now;
+
+      if (difference <= 0) {
+        return { total: 0, days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true };
+      }
+
+      return {
+        total: difference,
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+        isLive: false
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [isNextRace, raceSession]);
 
   const startDate = new Date(meeting.date_start).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
   const endDate = new Date(meeting.date_end).toLocaleDateString('en-GB', { day: 'numeric', month: 'short' });
@@ -253,6 +296,85 @@ export default function MeetingCard({ meeting, raceSession, isNextRace, index, v
             {!isSmall && <span style={{ width: '4px', height: '4px', borderRadius: '50%', background: 'var(--color-text-muted)' }} />}
             <span style={{ color: isSmall ? 'var(--color-text-muted)' : 'inherit' }}>{meeting.location}, {meeting.country_name}</span>
           </div>
+
+          {/* Countdown timer for the Next/Upcoming Race */}
+          {isNextRace && timeLeft && (
+            <div style={{
+              marginTop: '2rem',
+              display: 'flex',
+              flexDirection: 'column',
+              gap: '0.8rem',
+              zIndex: 2,
+              position: 'relative'
+            }}>
+              <div style={{
+                fontSize: '0.7rem',
+                color: 'var(--color-text-secondary)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+                display: 'flex',
+                alignItems: 'center',
+                gap: '0.5rem'
+              }}>
+                <span style={{ width: '6px', height: '6px', borderRadius: '50%', background: 'var(--color-accent-primary)', display: 'inline-block' }} />
+                Race Countdown
+              </div>
+
+              {timeLeft.isLive ? (
+                <div style={{
+                  fontSize: '1.4rem',
+                  fontFamily: 'var(--font-heading)',
+                  color: 'var(--color-accent-secondary)',
+                  textTransform: 'uppercase',
+                  letterSpacing: '0.1em'
+                }}>
+                  🏎️ RACE IS LIVE
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '1rem', alignItems: 'center', flexWrap: 'wrap' }}>
+                  {/* Days */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
+                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+                      {String(timeLeft.days).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
+                      Days
+                    </span>
+                  </div>
+
+                  {/* Hours */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
+                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+                      {String(timeLeft.hours).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
+                      Hrs
+                    </span>
+                  </div>
+
+                  {/* Minutes */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
+                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 600, lineHeight: 1 }}>
+                      {String(timeLeft.minutes).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
+                      Mins
+                    </span>
+                  </div>
+
+                  {/* Seconds */}
+                  <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', background: 'rgba(255,255,255,0.03)', border: '1px solid rgba(255,255,255,0.05)', borderRadius: '6px', padding: '0.6rem 1rem', minWidth: '70px' }}>
+                    <span style={{ fontSize: '1.8rem', fontFamily: 'var(--font-heading)', color: 'var(--color-accent-primary)', fontWeight: 600, lineHeight: 1 }}>
+                      {String(timeLeft.seconds).padStart(2, '0')}
+                    </span>
+                    <span style={{ fontSize: '0.55rem', color: 'var(--color-text-muted)', textTransform: 'uppercase', marginTop: '0.2rem', letterSpacing: '0.05em' }}>
+                      Secs
+                    </span>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
 
           {/* Podium Section for Completed Races */}
           {isCompleted && (
