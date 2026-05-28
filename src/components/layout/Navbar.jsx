@@ -41,8 +41,7 @@ export default function Navbar() {
           <div className={styles.links}>
             <NavLink to="/drivers" className={({ isActive }) => isActive ? styles.activeLink : styles.link}>Drivers</NavLink>
             <NavLink to="/teams" className={({ isActive }) => isActive ? styles.activeLink : styles.link}>Teams</NavLink>
-            <NavLink to="/seasons" className={({ isActive }) => isActive ? styles.activeLink : styles.link}>Races</NavLink>
-            <NavLink to="/sprint" className={({ isActive }) => isActive ? styles.activeLink : styles.link}>Sprint</NavLink>
+            <NavLink to="/events" className={({ isActive }) => isActive ? styles.activeLink : styles.link}>Events</NavLink>
           </div>
         </div>
       </motion.nav>

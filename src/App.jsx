@@ -1,13 +1,12 @@
 import React from 'react'
-import { BrowserRouter as Router, Routes, Route } from 'react-router-dom'
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
 import PageLayout from './components/layout/PageLayout'
 
 // Pages
 import Home from './pages/Home'
 import Drivers from './pages/Drivers'
 import Teams from './pages/Teams'
-import Seasons from './pages/Seasons'
-import Sprint from './pages/Sprint'
+import Events from './pages/Events'
 import DriverProfile from './pages/DriverProfile'
 
 function App() {
@@ -19,8 +18,9 @@ function App() {
           <Route path="/drivers" element={<Drivers />} />
           <Route path="/drivers/:driverSlug" element={<DriverProfile />} />
           <Route path="/teams" element={<Teams />} />
-          <Route path="/seasons" element={<Seasons />} />
-          <Route path="/sprint" element={<Sprint />} />
+          <Route path="/events" element={<Events />} />
+          <Route path="/seasons" element={<Navigate to="/events" replace />} />
+          <Route path="/sprint" element={<Navigate to="/events" replace />} />
         </Routes>
       </PageLayout>
     </Router>

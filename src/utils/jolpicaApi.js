@@ -329,5 +329,44 @@ export const jolpicaApi = {
       console.error(`Failed to fetch constructor timeline for driver ${driverId}`, error);
       throw error;
     }
+  },
+
+  /**
+   * Fetches the official race classification (results) for a specific year and round
+   */
+  getRaceResults: async (year, round) => {
+    try {
+      const data = await fetchJolpica(`/${year}/${round}/results.json`);
+      return data?.MRData?.RaceTable?.Races[0]?.Results || [];
+    } catch (e) {
+      console.error(`Failed to fetch race results for ${year} Rd ${round}`, e);
+      return [];
+    }
+  },
+
+  /**
+   * Fetches the official qualifying session classification (results) for a specific year and round
+   */
+  getQualifyingResults: async (year, round) => {
+    try {
+      const data = await fetchJolpica(`/${year}/${round}/qualifying.json`);
+      return data?.MRData?.RaceTable?.Races[0]?.QualifyingResults || [];
+    } catch (e) {
+      console.error(`Failed to fetch qualifying results for ${year} Rd ${round}`, e);
+      return [];
+    }
+  },
+
+  /**
+   * Fetches the official sprint session classification (results) for a specific year and round
+   */
+  getSprintResults: async (year, round) => {
+    try {
+      const data = await fetchJolpica(`/${year}/${round}/sprint.json`);
+      return data?.MRData?.RaceTable?.Races[0]?.SprintResults || [];
+    } catch (e) {
+      console.error(`Failed to fetch sprint results for ${year} Rd ${round}`, e);
+      return [];
+    }
   }
 };

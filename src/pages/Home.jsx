@@ -106,7 +106,7 @@ export default function Home() {
     <div ref={containerRef} style={{ background: 'var(--color-bg-base)', minHeight: '100vh', width: '100vw', left: '50%', right: '50%', marginLeft: '-50vw', marginRight: '-50vw', position: 'relative' }}>
 
       {/* 1. HERO SECTION */}
-      <HeroSection scrollYProgress={scrollYProgress} onExplore={() => navigate('/seasons')} />
+      <HeroSection scrollYProgress={scrollYProgress} onExplore={() => navigate('/events')} />
 
       {/* 2. DRIVER STANDINGS */}
       <StandingsSection drivers={drivers} loading={loading} />
