@@ -10,6 +10,7 @@ export default function Home() {
   const navigate = useNavigate();
   const [drivers, setDrivers] = useState([]);
   const [races, setRaces] = useState([]);
+  const [nextEvent, setNextEvent] = useState(null);
   const [loading, setLoading] = useState(true);
 
   const containerRef = useRef(null);
@@ -50,26 +51,35 @@ export default function Home() {
         hasError = true;
       }
 
-      // 2. Fetch Calendar
+      // 2. Fetch Calendar & Next Race
       try {
-        let currentYear = new Date().getFullYear();
-        let meetings = await f1Api.getMeetings(currentYear);
+        const now = new Date();
+        let currentYear = now.getFullYear();
+        let meetingsData = await f1Api.getMeetings(currentYear).catch(() => []);
+        let activeYear = currentYear;
 
-        if (!meetings || meetings.length === 0) {
-          meetings = await f1Api.getMeetings(2024);
+        if (!meetingsData || meetingsData.length === 0) {
+          meetingsData = await f1Api.getMeetings(2024).catch(() => []);
+          activeYear = 2024;
         }
 
-        if (meetings && meetings.length > 0) {
-          const sortedM = meetings.sort((a, b) => new Date(a.date_start) - new Date(b.date_start)).map((m, i) => ({
+        if (meetingsData && meetingsData.length > 0) {
+          // Fetch races and sprints for active year to determine the next upcoming event
+          const racesData = await f1Api.getSessions(activeYear, 'Race').catch(() => []);
+          const sprintsData = await f1Api.getSessions(activeYear, 'Sprint').catch(() => []);
+
+          const validMeetings = meetingsData.filter(m => m.meeting_name !== 'Pre-Season Testing');
+          const sprintMeetings = validMeetings.filter(m => sprintsData.some(s => s.meeting_key === m.meeting_key));
+
+          const sortedM = [...validMeetings].sort((a, b) => new Date(a.date_start) - new Date(b.date_start)).map((m, i) => ({
             round: i + 1,
             country: m.country_name,
             circuit: m.circuit_short_name || m.location,
             date: new Date(m.date_start).toLocaleDateString('en-US', { month: 'short', day: 'numeric' }),
             rawDate: new Date(m.date_start),
-            image: m.circuit_image // Fetched dynamically from the API
+            image: m.circuit_image
           }));
 
-          const now = new Date();
           let upcoming = sortedM.filter(m => {
             const virtualDate = new Date(m.rawDate);
             virtualDate.setFullYear(now.getFullYear());
@@ -80,6 +90,66 @@ export default function Home() {
           else upcoming = upcoming.slice(0, 5);
 
           if (isMounted) setRaces(upcoming);
+
+          // Calculate Next Event
+          const thresholdTime = now.getTime() - 2 * 60 * 60 * 1000;
+          const futureSessions = [];
+
+          // Race sessions
+          racesData.forEach(session => {
+            const sessionStart = new Date(session.date_start).getTime();
+            if (sessionStart > thresholdTime) {
+              const meeting = validMeetings.find(m => m.meeting_key === session.meeting_key);
+              if (meeting) {
+                futureSessions.push({
+                  type: 'Grand Prix',
+                  date: new Date(session.date_start),
+                  session,
+                  meeting,
+                  index: validMeetings.findIndex(m => m.meeting_key === session.meeting_key)
+                });
+              }
+            }
+          });
+
+          // Sprint sessions
+          sprintsData.forEach(session => {
+            const sessionStart = new Date(session.date_start).getTime();
+            if (sessionStart > thresholdTime) {
+              const meeting = validMeetings.find(m => m.meeting_key === session.meeting_key);
+              if (meeting) {
+                futureSessions.push({
+                  type: 'Sprint Race',
+                  date: new Date(session.date_start),
+                  session,
+                  meeting,
+                  index: sprintMeetings.findIndex(m => m.meeting_key === session.meeting_key)
+                });
+              }
+            }
+          });
+
+          futureSessions.sort((a, b) => a.date - b.date);
+
+          let resolvedNextEvent = null;
+          if (futureSessions.length > 0) {
+            resolvedNextEvent = futureSessions[0];
+          } else {
+            const fallbackGpIndex = validMeetings.findIndex(m => new Date(m.date_end) > now);
+            if (fallbackGpIndex !== -1) {
+              const meeting = validMeetings[fallbackGpIndex];
+              const session = racesData.find(s => s.meeting_key === meeting.meeting_key);
+              resolvedNextEvent = {
+                type: 'Grand Prix',
+                date: new Date(meeting.date_start),
+                session,
+                meeting,
+                index: fallbackGpIndex
+              };
+            }
+          }
+
+          if (isMounted) setNextEvent(resolvedNextEvent);
         }
       } catch (err) {
         console.error("Failed to load calendar API data:", err);
@@ -107,6 +177,9 @@ export default function Home() {
 
       {/* 1. HERO SECTION */}
       <HeroSection scrollYProgress={scrollYProgress} onExplore={() => navigate('/events')} />
+
+      {/* NEXT DESTINATION SECTON */}
+      {nextEvent && <NextRaceSection nextEvent={nextEvent} navigate={navigate} />}
 
       {/* 2. DRIVER STANDINGS */}
       <StandingsSection drivers={drivers} loading={loading} />
@@ -360,5 +433,278 @@ function Footer() {
         <span>Non-commercial conceptual design</span>
       </div>
     </footer>
+  );
+}
+
+function NextRaceSection({ nextEvent, navigate }) {
+  const [timeLeft, setTimeLeft] = useState(null);
+  const [isHovered, setIsHovered] = useState(false);
+
+  useEffect(() => {
+    if (!nextEvent?.session?.date_start) return;
+
+    const parseUtcDate = (dateStr) => {
+      if (!dateStr) return null;
+      let formatted = dateStr;
+      if (!dateStr.endsWith('Z') && !dateStr.includes('+') && !dateStr.match(/-\d{2}:\d{2}$/)) {
+        formatted = dateStr + 'Z';
+      }
+      return new Date(formatted);
+    };
+
+    const targetDate = parseUtcDate(nextEvent.session.date_start);
+    if (!targetDate || isNaN(targetDate.getTime())) return;
+
+    const calculateTimeLeft = () => {
+      const now = new Date();
+      const difference = targetDate - now;
+
+      // 2 hours in ms = 2 * 60 * 60 * 1000 = 7,200,000
+      if (difference <= 0) {
+        if (difference >= -7200000) {
+          return { total: difference, days: 0, hours: 0, minutes: 0, seconds: 0, isLive: true, isOver: false };
+        } else {
+          return { total: difference, days: 0, hours: 0, minutes: 0, seconds: 0, isLive: false, isOver: true };
+        }
+      }
+
+      return {
+        total: difference,
+        days: Math.floor(difference / (1000 * 60 * 60 * 24)),
+        hours: Math.floor((difference / (1000 * 60 * 60)) % 24),
+        minutes: Math.floor((difference / 1000 / 60) % 60),
+        seconds: Math.floor((difference / 1000) % 60),
+        isLive: false,
+        isOver: false
+      };
+    };
+
+    setTimeLeft(calculateTimeLeft());
+
+    const timer = setInterval(() => {
+      setTimeLeft(calculateTimeLeft());
+    }, 1000);
+
+    return () => clearInterval(timer);
+  }, [nextEvent]);
+
+  if (!nextEvent) return null;
+
+  const meeting = nextEvent.meeting;
+  
+  const startDate = new Date(meeting.date_start).toLocaleDateString('en-US', { day: 'numeric', month: 'short' });
+  const endDate = new Date(meeting.date_end).toLocaleDateString('en-US', { day: 'numeric', month: 'short', year: 'numeric' });
+
+  return (
+    <section 
+      onClick={() => navigate('/events')}
+      onMouseEnter={() => setIsHovered(true)}
+      onMouseLeave={() => setIsHovered(false)}
+      style={{ 
+        padding: '10vw 5vw', 
+        position: 'relative', 
+        zIndex: 2, 
+        background: 'var(--color-bg-base)',
+        borderBottom: '1px solid var(--color-border)',
+        cursor: 'pointer'
+      }}
+    >
+      {/* Background Ambient Glow */}
+      <div style={{
+        position: 'absolute', top: '10%', right: '10%', width: '300px', height: '300px',
+        background: 'var(--color-accent-primary)', filter: 'blur(160px)', opacity: 0.08, zIndex: 0, pointerEvents: 'none'
+      }} />
+
+      <div style={{ 
+        display: 'flex', 
+        justifyContent: 'space-between', 
+        alignItems: 'flex-start', 
+        flexWrap: 'wrap',
+        gap: '3rem',
+        position: 'relative',
+        zIndex: 1
+      }}>
+        {/* Left column: Title */}
+        <div style={{ flex: '0 0 250px' }}>
+          <h2 style={{ fontSize: 'clamp(2rem, 4vw, 3rem)', margin: 0, fontFamily: 'var(--font-heading)', textTransform: 'uppercase', lineHeight: 0.9 }}>
+            Next<br />
+            <span style={{ color: 'var(--color-accent-primary)' }}>Destination</span>
+          </h2>
+          <div style={{
+            marginTop: '2rem',
+            display: 'inline-flex',
+            alignItems: 'center',
+            gap: '0.5rem',
+            background: nextEvent.type === 'Sprint Race' ? 'linear-gradient(90deg, #ff8000, #ff4000)' : 'var(--color-accent-primary)',
+            color: '#fff',
+            padding: '0.3rem 0.8rem',
+            borderRadius: '4px',
+            fontFamily: 'var(--font-heading)',
+            fontWeight: 600,
+            letterSpacing: '0.05em',
+            fontSize: '0.75rem',
+            textTransform: 'uppercase'
+          }}>
+            {nextEvent.type}
+          </div>
+        </div>
+
+        {/* Center/Right column: Event info & countdown */}
+        <div style={{ flex: '1', minWidth: '320px', display: 'flex', flexDirection: 'column', gap: '2.5rem' }}>
+          
+          {/* Circuit details */}
+          <div>
+            <div style={{ display: 'flex', alignItems: 'center', gap: '1rem', marginBottom: '1rem' }}>
+              <img
+                src={meeting.country_flag}
+                alt={meeting.country_name}
+                style={{ width: '45px', borderRadius: '3px', border: '1px solid rgba(255,255,255,0.1)' }}
+              />
+              <span style={{ fontFamily: 'var(--font-heading)', fontSize: '1.1rem', color: 'var(--color-text-secondary)', letterSpacing: '0.05em' }}>
+                {startDate} - {endDate}
+              </span>
+            </div>
+            
+            <h3 style={{ 
+              fontSize: 'clamp(2.5rem, 5vw, 4.5rem)', 
+              fontFamily: 'var(--font-heading)', 
+              margin: 0, 
+              lineHeight: 1, 
+              textTransform: 'uppercase',
+              color: '#fff'
+            }}>
+              {(meeting.meeting_official_name || meeting.meeting_name || '').replace(/formula 1/ig, '').replace(/\s{2,}/g, ' ').trim()}
+            </h3>
+            
+            <p style={{ 
+              color: 'var(--color-text-secondary)', 
+              margin: '0.8rem 0 0 0', 
+              fontSize: '1.2rem', 
+              textTransform: 'uppercase', 
+              letterSpacing: '0.1em' 
+            }}>
+              {meeting.circuit_short_name} • <span style={{ color: 'var(--color-text-muted)' }}>{meeting.location}, {meeting.country_name}</span>
+            </p>
+          </div>
+
+          {/* Countdown Clock */}
+          {timeLeft && (
+            <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem' }}>
+              <div style={{
+                fontSize: '0.75rem',
+                color: 'var(--color-text-muted)',
+                textTransform: 'uppercase',
+                letterSpacing: '0.2em',
+                fontWeight: 600
+              }}>
+                RACE COUNTDOWN
+              </div>
+
+              {timeLeft.isLive ? (
+                <div style={{ display: 'flex', flexDirection: 'column', gap: '0.4rem' }}>
+                  <div style={{
+                    fontSize: '2rem',
+                    fontFamily: 'var(--font-heading)',
+                    color: 'var(--color-accent-secondary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em'
+                  }}>
+                    🏎️ RACE IS LIVE
+                  </div>
+                  <div style={{
+                    fontSize: '1.5rem',
+                    fontFamily: 'var(--font-heading)',
+                    color: 'var(--color-accent-primary)',
+                    textTransform: 'uppercase',
+                    letterSpacing: '0.05em',
+                    fontWeight: 600,
+                  }}>
+                    LIGHTS OUT! RACING ON!
+                  </div>
+                </div>
+              ) : timeLeft.isOver ? (
+                <div style={{ fontSize: '1.8rem', color: 'var(--color-text-muted)', fontFamily: 'var(--font-heading)' }}>
+                  Session Completed
+                </div>
+              ) : (
+                <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'baseline', flexWrap: 'wrap' }}>
+                  {/* Days */}
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                    {String(timeLeft.days).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: '1.2rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', marginRight: '2rem', letterSpacing: '0.05em' }}>
+                    d
+                  </span>
+
+                  {/* Hours */}
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                    {String(timeLeft.hours).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: '1.2rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', marginRight: '2rem', letterSpacing: '0.05em' }}>
+                    h
+                  </span>
+
+                  {/* Minutes */}
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', fontFamily: 'var(--font-heading)', color: '#fff', fontWeight: 700, lineHeight: 1 }}>
+                    {String(timeLeft.minutes).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: '1.2rem', color: 'var(--color-text-secondary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', marginRight: '2rem', letterSpacing: '0.05em' }}>
+                    m
+                  </span>
+
+                  {/* Seconds */}
+                  <span style={{ fontSize: 'clamp(3.5rem, 8vw, 6rem)', fontFamily: 'var(--font-heading)', color: 'var(--color-accent-primary)', fontWeight: 700, lineHeight: 1 }}>
+                    {String(timeLeft.seconds).padStart(2, '0')}
+                  </span>
+                  <span style={{ fontSize: '1.2rem', color: 'var(--color-accent-primary)', textTransform: 'uppercase', fontFamily: 'var(--font-body)', letterSpacing: '0.05em' }}>
+                    s
+                  </span>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Interactive Arrow CTA Link */}
+          <div style={{
+            display: 'flex',
+            alignItems: 'center',
+            gap: '0.6rem',
+            fontSize: '0.9rem',
+            color: isHovered ? '#fff' : 'var(--color-text-secondary)',
+            textTransform: 'uppercase',
+            letterSpacing: '0.15em',
+            fontFamily: 'var(--font-heading)',
+            marginTop: '1rem',
+            transition: 'color 0.2s ease-out'
+          }}>
+            <span>View Full Weekend Schedule & Classification</span>
+            <span style={{ 
+              color: 'var(--color-accent-primary)', 
+              transform: isHovered ? 'translateX(6px)' : 'translateX(0)', 
+              transition: 'transform 0.2s ease-out' 
+            }}>→</span>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Styled circuit background watermark */}
+      {meeting.circuit_image && (
+        <div style={{
+          position: 'absolute',
+          right: '5%',
+          bottom: '5%',
+          width: '350px',
+          height: '250px',
+          backgroundImage: `url(${meeting.circuit_image})`,
+          backgroundSize: 'contain',
+          backgroundPosition: 'right bottom',
+          backgroundRepeat: 'no-repeat',
+          filter: 'invert(1) opacity(0.04)',
+          pointerEvents: 'none',
+          zIndex: 0
+        }} />
+      )}
+    </section>
   );
 }
