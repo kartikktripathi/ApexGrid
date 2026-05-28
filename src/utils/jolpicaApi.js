@@ -542,5 +542,9 @@ export const jolpicaApi = {
       console.error(`Failed to fetch drivers for constructor ${constructorId} in ${year}`, e);
       return [];
     }
+  },
+
+  getConstructorResults: async (constructorId, year) => {
+    return fetchJolpica(`/${year}/constructors/${constructorId}/results.json?limit=1000`);
   }
 };

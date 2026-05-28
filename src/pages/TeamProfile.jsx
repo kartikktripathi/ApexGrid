@@ -225,51 +225,52 @@ export default function TeamProfile() {
         const raceData = await f1Api.getSessions(selectedYear, 'Race');
         if (!isMounted) return;
 
-        // Resolve active driver numbers and drivers for this constructor in the selected year
         const cleanStr = (s) => (s || '').toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "").replace(/[^a-z0-9]/g, '').trim();
         const targetClean = cleanStr(currentTeamInfo.team_name);
 
-        let resolvedDrivers = [];
-        try {
-          const constructorId = await jolpicaApi.getConstructorId(currentTeamInfo.team_name);
-          const jolpicaDrivers = await jolpicaApi.getConstructorDrivers(constructorId, selectedYear);
-          resolvedDrivers = jolpicaDrivers.map(d => ({
-            driver_number: parseInt(d.permanentNumber, 10),
-            first_name: d.givenName,
-            last_name: d.familyName,
-            full_name: `${d.givenName} ${d.familyName}`,
-            name_acronym: d.code
-          })).filter(d => !isNaN(d.driver_number));
-        } catch (e) {
-          console.warn("Failed to load constructor drivers from Jolpica, falling back to OpenF1", e);
-        }
+        const constructorId = await jolpicaApi.getConstructorId(currentTeamInfo.team_name);
+        const data = await jolpicaApi.getConstructorResults(constructorId, selectedYear);
+        const races = data?.MRData?.RaceTable?.Races || [];
 
-        if (resolvedDrivers.length === 0) {
-          const activeDrivers = await f1Api.getDrivers('latest').catch(() => []);
-          resolvedDrivers = activeDrivers.filter(d => {
-            const dClean = cleanStr(d.team_name);
-            return dClean === targetClean || dClean.includes(targetClean) || targetClean.includes(dClean);
-          }).map(d => ({
-            driver_number: d.driver_number,
-            first_name: d.first_name,
-            last_name: d.last_name,
-            full_name: d.full_name || `${d.first_name} ${d.last_name}`,
-            name_acronym: d.name_acronym
-          }));
-        }
+        if (!isMounted) return;
 
-        // Deduplicate driver records by driver_number
-        const seenNumbers = new Set();
-        const uniqueDrivers = [];
-        resolvedDrivers.forEach(d => {
-          if (!seenNumbers.has(d.driver_number)) {
-            uniqueDrivers.push(d);
-            seenNumbers.add(d.driver_number);
-          }
+        // 1. Extract unique drivers using driverId (which is unique and name-based)
+        const driversMap = {};
+        races.forEach(race => {
+          (race.Results || []).forEach(res => {
+            const d = res.Driver;
+            if (!driversMap[d.driverId]) {
+              driversMap[d.driverId] = {
+                driver_number: parseInt(d.permanentNumber || res.number, 10),
+                first_name: d.givenName,
+                last_name: d.familyName,
+                full_name: `${d.givenName} ${d.familyName}`,
+                name_acronym: d.code,
+                driverId: d.driverId
+              };
+            }
+          });
         });
+        let uniqueDrivers = Object.values(driversMap);
 
-        const completedRaces = (raceData || []).filter(r => new Date(r.date_start) < new Date());
+        const completedRaces = races.filter(r => new Date(r.date) < new Date());
         const hasCompletedRaces = completedRaces.length > 0;
+
+        if (uniqueDrivers.length === 0) {
+          try {
+            const jolpicaDrivers = await jolpicaApi.getConstructorDrivers(constructorId, selectedYear);
+            uniqueDrivers = jolpicaDrivers.map(d => ({
+              driver_number: parseInt(d.permanentNumber, 10),
+              first_name: d.givenName,
+              last_name: d.familyName,
+              full_name: `${d.givenName} ${d.familyName}`,
+              name_acronym: d.code,
+              driverId: d.driverId
+            })).filter(d => !isNaN(d.driver_number));
+          } catch (e) {
+            console.warn("Failed to load constructor drivers fallback", e);
+          }
+        }
 
         if (hasCompletedRaces && uniqueDrivers.length < 2) {
           throw new Error(`Could not resolve both drivers for team in ${selectedYear}`);
@@ -277,28 +278,33 @@ export default function TeamProfile() {
 
         if (isMounted) setCurrentDrivers(uniqueDrivers);
 
-        // Fetch finish positions for both resolved driver numbers
-        const positionsData = await Promise.all(
-          uniqueDrivers.map(async (driver) => {
-            const res = await fetch(`https://api.openf1.org/v1/session_result?driver_number=${driver.driver_number}`);
-            if (!res.ok) throw new Error(`Telemetry request failed for driver ${driver.driver_number}`);
-            const data = await res.json();
-            const results = Array.isArray(data) ? data : [];
+        // 2. Map races to sessions structure with round as session_key
+        const sortedRaces = [...(raceData || [])].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
+        const mappedSessions = sortedRaces.map((race, idx) => ({
+          ...race,
+          session_key: idx + 1 // Round number
+        }));
 
-            if (hasCompletedRaces && results.length === 0) {
-              throw new Error(`Empty telemetry results returned for driver ${driver.driver_number}`);
-            }
-
+        // 3. Map results to positionsData using driverId (name-based mapping)
+        const positionsData = uniqueDrivers.map(driver => {
+          const results = races.map(race => {
+            const resMatch = (race.Results || []).find(r => r.Driver.driverId === driver.driverId);
             return {
-              driver_number: driver.driver_number,
-              results
+              session_key: parseInt(race.round, 10), // Round number
+              position: resMatch ? parseInt(resMatch.position, 10) : null,
+              points: resMatch ? parseFloat(resMatch.points || 0) : 0
             };
-          })
-        );
+          });
+
+          return {
+            driver_number: driver.driver_number,
+            results
+          };
+        });
 
         if (!isMounted) return;
 
-        setSessions(raceData || []);
+        setSessions(mappedSessions);
         setDriversPositions(positionsData);
         setLoadingSeasonData(false);
       } catch (e) {
