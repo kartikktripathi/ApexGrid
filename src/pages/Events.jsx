@@ -28,6 +28,12 @@ export default function Events() {
 
   const years = [2026, 2025, 2024, 2023];
 
+  const getActualRound = (meeting) => {
+    const index = meetings.findIndex(m => m.meeting_key === meeting.meeting_key);
+    if (index === -1) return 1;
+    return meetings.slice(0, index + 1).filter(m => !m.is_cancelled).length;
+  };
+
   useEffect(() => {
     let isMounted = true;
     let timerId = null;
@@ -328,9 +334,9 @@ export default function Events() {
                     index={nextEventData.index} 
                     raceSession={nextEventData.session}
                     variant="large"
-                    onClick={() => setSelectedEvent({
+                    onClick={nextEventData.meeting.is_cancelled ? null : () => setSelectedEvent({
                       meeting: nextEventData.meeting,
-                      round: nextEventData.index + 1,
+                      round: getActualRound(nextEventData.meeting),
                       type: nextEventData.type === 'Sprint Race' ? 'Sprint' : 'Grand Prix'
                     })}
                   />
@@ -361,7 +367,7 @@ export default function Events() {
                     {sprintMeetings.map((meeting, index) => {
                       const isNext = nextEventData && nextEventData.type === 'Sprint Race' && nextEventData.meeting.meeting_key === meeting.meeting_key;
                       const session = sprintSessions.find(s => s.meeting_key === meeting.meeting_key);
-                      const originalIndex = meetings.findIndex(m => m.meeting_key === meeting.meeting_key);
+                      const isCancelled = meeting.is_cancelled === true;
                       return (
                         <MeetingCard 
                           key={`sprint-${meeting.meeting_key}`} 
@@ -370,9 +376,9 @@ export default function Events() {
                           isNextRace={isNext}
                           raceSession={session}
                           variant="small"
-                          onClick={() => setSelectedEvent({
+                          onClick={isCancelled ? null : () => setSelectedEvent({
                             meeting,
-                            round: originalIndex !== -1 ? originalIndex + 1 : index + 1,
+                            round: getActualRound(meeting),
                             type: 'Sprint'
                           })}
                         />
@@ -397,6 +403,7 @@ export default function Events() {
                   {meetings.map((meeting, index) => {
                     const isNext = nextEventData && nextEventData.type === 'Grand Prix' && nextEventData.meeting.meeting_key === meeting.meeting_key;
                     const session = raceSessions.find(s => s.meeting_key === meeting.meeting_key);
+                    const isCancelled = meeting.is_cancelled === true;
                     return (
                       <MeetingCard 
                         key={`gp-${meeting.meeting_key}`} 
@@ -405,9 +412,9 @@ export default function Events() {
                         isNextRace={isNext}
                         raceSession={session}
                         variant="large"
-                        onClick={() => setSelectedEvent({
+                        onClick={isCancelled ? null : () => setSelectedEvent({
                           meeting,
-                          round: index + 1,
+                          round: getActualRound(meeting),
                           type: 'Grand Prix'
                         })}
                       />
