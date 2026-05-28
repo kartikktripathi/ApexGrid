@@ -23,6 +23,44 @@ const formatDriverName = (driver) => {
   return driver.broadcast_name || driver.full_name || '';
 };
 
+const getDriverColor = (dIdx, teamColor) => {
+  if (dIdx === 0) return teamColor;
+
+  const hex = (teamColor || '').toLowerCase().trim();
+
+  const accents = [
+    '#00d2c4', // Cyan/Teal
+    '#ffd700', // Gold/Yellow
+    '#ff8700', // Orange
+    '#e10600', // Red
+    '#b026ff', // Purple
+    '#007aff', // Blue
+    '#39ff14'  // Green
+  ];
+
+  const isClose = (c1, c2) => {
+    if (c1 === c2) return true;
+    if (c1.includes('red') || c1.includes('e106') || c1.includes('ff1e')) {
+      return c2 === '#e10600' || c2 === '#ff8700';
+    }
+    if (c1.includes('orange') || c1.includes('ff87')) {
+      return c2 === '#ff8700' || c2 === '#ffd700';
+    }
+    if (c1.includes('green') || c1.includes('006f') || c1.includes('52e2') || c1.includes('39ff')) {
+      return c2 === '#39ff14' || c2 === '#00d2c4';
+    }
+    if (c1.includes('blue') || c1.includes('005a') || c1.includes('1033') || c1.includes('0600')) {
+      return c2 === '#007aff' || c2 === '#00d2c4';
+    }
+    return false;
+  };
+
+  const availableAccents = accents.filter(acc => !isClose(hex, acc.toLowerCase()));
+
+  const accentIdx = (dIdx - 1) % availableAccents.length;
+  return availableAccents[accentIdx] || '#ffd700';
+};
+
 export default function TeamProfile() {
   const { teamSlug } = useParams();
   const navigate = useNavigate();
@@ -192,38 +230,32 @@ export default function TeamProfile() {
         const targetClean = cleanStr(currentTeamInfo.team_name);
 
         let resolvedDrivers = [];
-        const currentYear = new Date().getFullYear();
-        let sessionKey = 'latest';
+        try {
+          const constructorId = await jolpicaApi.getConstructorId(currentTeamInfo.team_name);
+          const jolpicaDrivers = await jolpicaApi.getConstructorDrivers(constructorId, selectedYear);
+          resolvedDrivers = jolpicaDrivers.map(d => ({
+            driver_number: parseInt(d.permanentNumber, 10),
+            first_name: d.givenName,
+            last_name: d.familyName,
+            full_name: `${d.givenName} ${d.familyName}`,
+            name_acronym: d.code
+          })).filter(d => !isNaN(d.driver_number));
+        } catch (e) {
+          console.warn("Failed to load constructor drivers from Jolpica, falling back to OpenF1", e);
+        }
 
-        if (selectedYear !== currentYear && raceData && raceData.length > 0) {
-          const sorted = [...raceData].sort((a, b) => new Date(a.date_start) - new Date(b.date_start));
-          // Search sessions chronologically for a valid driver registry
-          for (const race of sorted) {
-            try {
-              const res = await fetch(`https://api.openf1.org/v1/drivers?session_key=${race.session_key}`);
-              if (res.ok) {
-                const list = await res.json();
-                const matches = list.filter(d => {
-                  const dClean = cleanStr(d.team_name);
-                  return dClean === targetClean || dClean.includes(targetClean) || targetClean.includes(dClean);
-                });
-                if (matches.length > 0) {
-                  resolvedDrivers = matches;
-                  sessionKey = race.session_key;
-                  break;
-                }
-              }
-            } catch (e) {
-              console.warn(e);
-            }
-          }
-        } else {
-          // Current year 'latest'
+        if (resolvedDrivers.length === 0) {
           const activeDrivers = await f1Api.getDrivers('latest').catch(() => []);
           resolvedDrivers = activeDrivers.filter(d => {
             const dClean = cleanStr(d.team_name);
             return dClean === targetClean || dClean.includes(targetClean) || targetClean.includes(dClean);
-          });
+          }).map(d => ({
+            driver_number: d.driver_number,
+            first_name: d.first_name,
+            last_name: d.last_name,
+            full_name: d.full_name || `${d.first_name} ${d.last_name}`,
+            name_acronym: d.name_acronym
+          }));
         }
 
         // Deduplicate driver records by driver_number
@@ -602,8 +634,7 @@ export default function TeamProfile() {
                     <div style={{ 
                       width: '20px', 
                       height: '3px', 
-                      background: teamColor,
-                      opacity: dIdx === 1 ? 0.6 : 1
+                      background: getDriverColor(dIdx, teamColor)
                     }} />
                     <span style={{ fontSize: '0.85rem', color: 'var(--color-text-secondary)', fontWeight: 600, textTransform: 'uppercase' }}>
                       {formatDriverName(driver)}
@@ -708,11 +739,11 @@ export default function TeamProfile() {
                       <polyline
                         key={driver.driver_number}
                         fill="none"
-                        stroke={teamColor}
+                        stroke={getDriverColor(dIdx, teamColor)}
                         strokeWidth="3"
                         points={points}
                         filter="url(#shadowGlow)"
-                        opacity={dIdx === 1 ? 0.6 : 0.9}
+                        opacity="0.9"
                       />
                     ) : null;
                   })}
@@ -735,7 +766,7 @@ export default function TeamProfile() {
                                   cx={x}
                                   cy={y}
                                   r="8"
-                                  fill={teamColor}
+                                  fill={getDriverColor(dIdx, teamColor)}
                                   opacity="0.25"
                                 />
                               )}
@@ -743,10 +774,10 @@ export default function TeamProfile() {
                                 cx={x}
                                 cy={y}
                                 r={isHovered ? "5" : "3.5"}
-                                fill={teamColor}
+                                fill={getDriverColor(dIdx, teamColor)}
                                 stroke="#ffffff"
                                 strokeWidth="1"
-                                opacity={dIdx === 1 ? 0.6 : 1}
+                                opacity="1"
                               />
                             </g>
                           );
@@ -797,10 +828,13 @@ export default function TeamProfile() {
 
                     <div style={{ display: 'flex', flexDirection: 'column', gap: '0.5rem', borderTop: '1px solid rgba(255,255,255,0.06)', paddingTop: '0.8rem' }}>
                       {seasonStats.races[hoveredRoundIdx].results.map((res, dIdx) => (
-                        <div key={dIdx} style={{ display: 'flex', justifyContent: 'space-between', fontSize: '0.85rem' }}>
-                          <span style={{ color: 'var(--color-text-secondary)' }}>
-                            {formatDriverName(res.driver)}:
-                          </span>
+                        <div key={dIdx} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', fontSize: '0.85rem', gap: '1rem' }}>
+                          <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
+                            <div style={{ width: '8px', height: '8px', borderRadius: '50%', background: getDriverColor(dIdx, teamColor) }} />
+                            <span style={{ color: 'var(--color-text-secondary)' }}>
+                              {formatDriverName(res.driver)}:
+                            </span>
+                          </div>
                           <span style={{ fontWeight: 600, color: '#fff' }}>
                             {res.position ? `P${res.position} (+${res.points} pts)` : 'DNF/DNS'}
                           </span>
