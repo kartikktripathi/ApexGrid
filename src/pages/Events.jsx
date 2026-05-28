@@ -637,7 +637,17 @@ export default function Events() {
                                 <td style={{ padding: '1rem', color: '#fff' }}>
                                   <div style={{ display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
                                     <span 
-                                      onClick={() => navigate(`/drivers/${getDriverSlug(driver.givenName, driver.familyName)}`)}
+                                      onClick={() => {
+                                        const slug = getDriverSlug(driver.givenName, driver.familyName);
+                                        const driverState = {
+                                          driver_number: parseInt(driver.permanentNumber || row.number, 10),
+                                          first_name: driver.givenName,
+                                          last_name: driver.familyName,
+                                          full_name: `${driver.givenName} ${driver.familyName}`,
+                                          team_name: constructor.name
+                                        };
+                                        navigate(`/drivers/${slug}`, { state: { driver: driverState } });
+                                      }}
                                       style={{ 
                                         fontWeight: 600, 
                                         cursor: 'pointer',
