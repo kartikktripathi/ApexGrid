@@ -23,6 +23,14 @@ const formatDriverName = (driver) => {
   return driver.broadcast_name || driver.full_name || "";
 };
 
+const cleanName = (str) =>
+  (str || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9]/g, "")
+    .trim();
+
 const getDriverColor = (dIdx, teamColor) => {
   if (dIdx === 0) return teamColor;
 
@@ -308,10 +316,38 @@ export default function TeamProfile() {
         const sortedRaces = [...(raceData || [])].sort(
           (a, b) => new Date(a.date_start) - new Date(b.date_start),
         );
-        const mappedSessions = sortedRaces.map((race, idx) => ({
-          ...race,
-          session_key: idx + 1,
-        }));
+
+        let activeRoundCount = 0;
+        const mappedSessions = sortedRaces.map((race, idx) => {
+          const sessionLoc = cleanName(race.location);
+          const sessionCircuit = cleanName(race.circuit_short_name);
+
+          const match = races.find((r) => {
+            const jolpicaLoc = cleanName(r.Circuit?.Location?.locality);
+            const jolpicaCircuitName = cleanName(r.Circuit?.circuitName);
+            const jolpicaRaceName = cleanName(r.raceName);
+
+            return (
+              (jolpicaLoc && (jolpicaLoc === sessionLoc || jolpicaLoc === sessionCircuit)) ||
+              (jolpicaCircuitName && jolpicaCircuitName.includes(sessionCircuit)) ||
+              (jolpicaRaceName && (jolpicaRaceName.includes(sessionLoc) || jolpicaRaceName.includes(sessionCircuit)))
+            );
+          });
+
+          const isCancelled =
+            race.is_cancelled === true ||
+            (new Date(race.date_start) < new Date() && !match);
+
+          if (!isCancelled) {
+            activeRoundCount++;
+          }
+          return {
+            ...race,
+            session_key: idx + 1,
+            is_cancelled: isCancelled,
+            actual_round: isCancelled ? null : activeRoundCount,
+          };
+        });
 
         const positionsData = uniqueDrivers.map((driver) => {
           const results = races.map((race) => {
@@ -380,9 +416,9 @@ export default function TeamProfile() {
         const dPositions = driversPositions.find(
           (p) => p.driver_number === driver.driver_number,
         );
-        const matchResult = dPositions
+        const matchResult = dPositions && !race.is_cancelled
           ? dPositions.results.find(
-              (res) => res.session_key === race.session_key,
+              (res) => res.session_key === race.actual_round,
             )
           : null;
         const finishPos = matchResult ? matchResult.position : null;
@@ -408,6 +444,7 @@ export default function TeamProfile() {
         circuit: race.circuit_short_name || race.location,
         location: race.location,
         country: race.country_name,
+        is_cancelled: race.is_cancelled,
         results: roundResults,
       };
     });
@@ -1189,48 +1226,62 @@ export default function TeamProfile() {
                           paddingTop: "0.8rem",
                         }}
                       >
-                        {seasonStats.races[hoveredRoundIdx].results.map(
-                          (res, dIdx) => (
-                            <div
-                              key={dIdx}
-                              style={{
-                                display: "flex",
-                                justifyContent: "space-between",
-                                alignItems: "center",
-                                fontSize: "0.85rem",
-                                gap: "1rem",
-                              }}
-                            >
+                        {seasonStats.races[hoveredRoundIdx].is_cancelled ? (
+                          <div
+                            style={{
+                              color: "var(--color-text-muted)",
+                              fontSize: "0.85rem",
+                              fontStyle: "italic",
+                              textAlign: "center",
+                              width: "100%",
+                            }}
+                          >
+                            Grand Prix Cancelled
+                          </div>
+                        ) : (
+                          seasonStats.races[hoveredRoundIdx].results.map(
+                            (res, dIdx) => (
                               <div
+                                key={dIdx}
                                 style={{
                                   display: "flex",
+                                  justifyContent: "space-between",
                                   alignItems: "center",
-                                  gap: "0.5rem",
+                                  fontSize: "0.85rem",
+                                  gap: "1rem",
                                 }}
                               >
                                 <div
                                   style={{
-                                    width: "8px",
-                                    height: "8px",
-                                    borderRadius: "50%",
-                                    background: getDriverColor(dIdx, teamColor),
-                                  }}
-                                />
-                                <span
-                                  style={{
-                                    color: "var(--color-text-secondary)",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    gap: "0.5rem",
                                   }}
                                 >
-                                  {formatDriverName(res.driver)}:
+                                  <div
+                                    style={{
+                                      width: "8px",
+                                      height: "8px",
+                                      borderRadius: "50%",
+                                      background: getDriverColor(dIdx, teamColor),
+                                    }}
+                                  />
+                                  <span
+                                    style={{
+                                      color: "var(--color-text-secondary)",
+                                    }}
+                                  >
+                                    {formatDriverName(res.driver)}:
+                                  </span>
+                                </div>
+                                <span style={{ fontWeight: 600, color: "#fff" }}>
+                                  {res.position
+                                    ? `P${res.position} (+${res.points} pts)`
+                                    : "DNF/DNS"}
                                 </span>
                               </div>
-                              <span style={{ fontWeight: 600, color: "#fff" }}>
-                                {res.position
-                                  ? `P${res.position} (+${res.points} pts)`
-                                  : "DNF/DNS"}
-                              </span>
-                            </div>
-                          ),
+                            ),
+                          )
                         )}
                       </div>
                     </div>
